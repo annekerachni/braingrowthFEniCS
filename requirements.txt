@@ -1,0 +1,9 @@
+fenics==2019.1.0        
+h5py==3.7.0
+gmsh==4.10.5
+meshio==5.3.4
+vedo==2022.3.0 
+matplotlib==3.5.3
+numpy==1.22.4
+numba==0.56.4
+sympy==1.11.1
