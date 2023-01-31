@@ -9,6 +9,7 @@
 - 2D and 3D separated codes to improve performance (avoid "if dimension == n" loops). But the architecture and parameters are the same.
 
 ## Usage limits
+- bilayer model
 - the non-linear residual form is minimized using the Newton-Raphson iterations method on linearized problem => condition for the approximation to be correct: displacement 'du' must be small (and also 'dt')
 - traction considered as nul (but needs to be clarified)
 
