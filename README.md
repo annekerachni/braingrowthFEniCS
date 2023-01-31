@@ -12,6 +12,7 @@
 - bilayer model
 - the non-linear residual form is minimized using the Newton-Raphson iterations method on linearized problem => condition for the approximation to be correct: displacement 'du' must be small (and also 'dt')
 - traction considered as nul (but needs to be clarified)
+- code not parallelized
 
 ## Still to be done
 - optimize solver parameters
