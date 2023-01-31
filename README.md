@@ -6,7 +6,7 @@
 - Non linear elastodynamics (dynamics: consider high wave frequency model) 
 - Discretization of spatial domain (FEM method) and temporal domain (generalized-alpha method)
 - Non linear solver: Newton
-- 2D and 3D separated codes to improve performance (avoid "if dimension == n" loops). But the architecture and parameters are the same.
+- 2D and 3D separated codes to improve performance (avoid "if dimension == n" loops). But the architecture and parameters types are the same.
 
 ## Usage limits
 - bilayer model
