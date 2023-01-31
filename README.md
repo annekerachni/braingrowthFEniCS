@@ -14,14 +14,15 @@
 - traction considered as nul (but needs to be clarified)
 
 ## Still to be done
-- accelerate braingrowth/solver/mappings/boundaryFunctionSpace_2_meshFunctionSpace_dofmap()
-- optimize solver parameters?
+- optimize solver parameters
 - fine tune parameters
 - collisions management
 - add 3D bock geometry
 - add separatedvisualization package
 - add metrics package including slam/Spangy
 - "Errors" management
+- gradient of layers
+- simulation time / real time
 
 ## References
 - [1] - T.Tallinen, F. Rousseau, J.Lefèvre, X.Wang et al. https://github.com/rousseau/BrainGrowth
