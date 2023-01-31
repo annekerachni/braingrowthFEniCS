@@ -21,7 +21,7 @@
 - add separatedvisualization package
 - add metrics package including slam/Spangy
 - "Errors" management
-- gradient of layers
+- gradient of layers / growth tensor
 - simulation time / real time
 
 ## References
