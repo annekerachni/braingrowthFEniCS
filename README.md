@@ -5,12 +5,11 @@
 - brain growth mechanics model developped with FEniCS library
 - Non linear elastodynamics (dynamics: consider high wave frequency model) 
 - Discretization of spatial domain (FEM method) and temporal domain (generalized-alpha method)
-- Non linear solver: Newton
+- Non linear solver: "newton" -> for each timestep 'dt', the non-linear residual form F is minimized trough successive linear iterations, thanks to jacobian dF/du. And for each "linear" iteration, a linear solver is used ("direct" or "iterative")
 - 2D and 3D separated codes to improve performance (avoid "if dimension == n" loops). But the architecture and parameters types are the same.
 
 ## Usage limits
 - bilayer model
-- the non-linear residual form is minimized using the Newton-Raphson iterations method on linearized problem => condition for the approximation to be correct: displacement 'du' must be small (and also 'dt')
 - traction considered as nul (but needs to be clarified)
 - code not parallelized
 
