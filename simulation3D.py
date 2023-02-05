@@ -25,8 +25,8 @@ if __name__ == '__main__':
     parser.add_argument('-bf', '--bodyforces', help='Body forces expression in PDE/residual form', required=False, default=fenics.Constant((0., 0., 0.)))
     parser.add_argument('-t', '--tmax', help='Simulation end time', type=float, required=True, default=1.)
     parser.add_argument('-nst', '--nsteps', help='Number of iterations to solve problem', type=int, required=True, default=100) # For each timestep, several Newton-Raphson solving iterations are performed onto the nonlinear residual form to minimize. These split enables to approximate the residual form/system as "linear"
-    parser.add_argument('-am', '--alpham', help='generalized-α method alphaM parameter', type=float, required=False, default=0.2) # 0. for Newmark- method (energy conservative)
-    parser.add_argument('-af', '--alphaf', help='generalized-α method alphaF parameter', type=float, required=False, default=0.4) # 0. for Newmark- method (energy conservative)
+    parser.add_argument('-am', '--alpham', help='generalized-α method alphaM parameter', type=float, required=False, default=0.2) # 0. for Newmark-β method (energy conservative)
+    parser.add_argument('-af', '--alphaf', help='generalized-α method alphaF parameter', type=float, required=False, default=0.4) # 0. for Newmark-β method (energy conservative)
 
     args = parser.parse_args() 
     
