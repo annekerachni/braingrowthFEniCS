@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-python simulation3D.py -i '/home/latim/FEniCS/GitHub/data_test/dhcpRAS_iso_fine.xml' -o '/home/latim/FEniCS/GitHub/results/dhcpRAS_iso_fine/' -n True -prm '/home/latim/FEniCS/GitHub/braingrowthFEniCS/braingrowth3D/parameters/parameters_dhcpfine.json' -nls 'newton' -ls 'gmres' -p 'ilu' -v True
-"""
 
 import argparse
 import fenics 
