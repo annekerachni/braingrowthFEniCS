@@ -8,9 +8,9 @@ import time
 class Mapping:
 
 
-    def __init__(self, meshObj, VectorSpace_CG1_mesh, VectorSpace_CG1_bmesh):
-        self.mesh = meshObj.mesh
-        self.brainsurface_bmesh_n_nodes = meshObj.brainsurface_bmesh.num_vertices()
+    def __init__(self, preprocessedFEniCSmesh, VectorSpace_CG1_mesh, VectorSpace_CG1_bmesh):
+        self.mesh = preprocessedFEniCSmesh.mesh
+        self.brainsurface_bmesh_n_nodes = preprocessedFEniCSmesh.brainsurface_bmesh.num_vertices()
         self.gdim = self.mesh.geometry().dim()
 
         self.VectorSpace_CG1_mesh = VectorSpace_CG1_mesh

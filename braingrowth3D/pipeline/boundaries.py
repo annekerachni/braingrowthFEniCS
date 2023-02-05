@@ -16,6 +16,10 @@ class BrainSurface(fenics.SubDomain):
         _, distance = self.brainsurface_bmesh_bbtree.compute_closest_entity(fenics.Point(*x))
         return fenics.near(distance, fenics.DOLFIN_EPS) 
 
+    """ def inside(self, x, on_boundary):
+        _, distance = self.brainsurface_bmesh_bbtree.compute_closest_entity(fenics.Point(*x))
+        ins = fenics.near(distance, fenics.DOLFIN_EPS) 
+        ins.mark(self.boundaries, self.brainsurface_mark, check_midpoint=False) """
 
     def mark_brainsurface_boundary(self):
         self.mark(self.boundaries, self.brainsurface_mark, check_midpoint=False) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2

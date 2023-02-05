@@ -1,0 +1,40 @@
+{
+  
+  "subdomains_definition_parameters" : { "cortical_thickness": 0.35 },
+  
+  "dirichlet_bcs_parameters" : {
+  				                      "consider_brainsurface_bc_TrueorFalse": false, 
+                                "brainsurface_bc": null
+                               },
+                               
+  "cortex_growth_parameters" : {
+  				                      "gr_cortex_TAN": 1.0, 
+                           	    "gr_cortex_RAD": 1.0,
+                            	  "alpha_cortex_TAN": 1.829,  
+                           	    "alpha_cortex_RAD": 0.0
+                           	   },
+                           	
+  "core_growth_parameters" : {
+  				                    "gr_core_TAN": 0.0, 
+                              "gr_core_RAD":0.0,
+                              "alpha_core_TAN": 0.0,  
+                              "alpha_core_RAD": 0.0
+                             },
+                             
+  "brain_material_parameters" : {
+  				                       "type":"elastic",
+                                 "constitutive_model": "neo_hookean",
+                                 "rho": 0.01046,  
+                            	   "damping": 0.5},
+                             
+  "cortex_material_parameters" : {
+  				                        "mu": 1.0,  
+                                  "k": 50.0
+                                 },
+                                 
+  "core_material_parameters" : {
+  				                      "mu": 1.167,  
+                                "k": 50.0
+                               }
+                                	   
+}

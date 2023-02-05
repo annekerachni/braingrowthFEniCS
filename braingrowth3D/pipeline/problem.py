@@ -3,27 +3,29 @@
 import fenics 
 import matplotlib.pyplot as plt
 
-from braingrowth3D.braingrowthFEM.formulate_problem import boundaries, subdomains, growth, kinematics, material, numericalscheme
-from utils.outputs import results_export
+from braingrowth3D.pipeline import boundaries, subdomains, growth, kinematics, material, numericalscheme
+#from ... import export_outputs
+import export_outputs
 
 
 class NonLinearDynamicMechanicsProblem:
     # code structure inspired from: https://github.com/ElsevierSoftwareX/SOFTX_2018_73/blob/632609a5eea1def5d079d62e818aabbdfd3727dd/fenicsmechanics/solidmechanics.py
 
     def __init__(self,
-                 meshObj, 
+                 preprocessedFEniCSmesh, 
                  subdomains_definition_parameters, 
                  temporal_discretization_parameters, dt,
                  brain_material_parameters, 
                  cortex_material_parameters, core_material_parameters,
                  dirichlet_bcs_parameters,
                  body_forces,
-                 results_folderpath):
+                 results_folderpath,
+                 visualization):
 
         self.results_folderpath = results_folderpath
 
-        self.meshObj = meshObj
-        self.brainsurface_bmesh = meshObj.brainsurface_bmesh
+        self.preprocessedFEniCSmesh = preprocessedFEniCSmesh
+        self.brainsurface_bmesh = preprocessedFEniCSmesh.brainsurface_bmesh
 
         # Input mesh
         self.set_FEniCS_mesh()
@@ -39,7 +41,7 @@ class NonLinearDynamicMechanicsProblem:
         """ self.get_brainsurface_bmesh() """
         self.initalize_subdomains()
         self.define_and_mark_subdomains(subdomains_definition_parameters)
-        self.analyse_subdomains_submeshes()
+        self.analyse_subdomains_submeshes(visualization)
         self.export_marked_subdomains()
 
         # ds, dx for variational form integration
@@ -69,11 +71,11 @@ class NonLinearDynamicMechanicsProblem:
     
 
     def set_FEniCS_mesh(self): # mesh: geometry.Mesh(FEniCS-format mesh, time), bmesh already computed from mesh object
-        self.mesh = self.meshObj.mesh 
+        self.mesh = self.preprocessedFEniCSmesh.mesh 
     
     """
     def get_brainsurface_bmesh(self): # subpart of the boundary mesh representing the brain surface ("partial" for rectangle, halfdisk or quarterdisk meshes; "whole" for disk, brain meshes)
-        self.brainsurface_bmesh = fenics.BoundaryMesh(self.meshObj.mesh, "exterior") # if mesh representing "whole" brain (2D or 3D) 
+        self.brainsurface_bmesh = fenics.BoundaryMesh(self.preprocessedFEniCSmesh.mesh, "exterior") # if mesh representing "whole" brain (2D or 3D) 
     """
 
     def get_brainsurface_bmesh_bbtree(self): # bounding box tree build from the brain surface mesh
@@ -94,15 +96,15 @@ class NonLinearDynamicMechanicsProblem:
 
     """ 
     def define_and_mark_other_boundaries(self):
-        self.left = boundaries.Left(self.meshObj, self.boundaries)
+        self.left = boundaries.Left(self.preprocessedFEniCSmesh, self.boundaries)
         self.left_mark = self.left.left_mark
         self.boundaries = self.left.mark_left_boundary()
 
-        self.right = boundaries.Right(self.meshObj, self.boundaries)
+        self.right = boundaries.Right(self.preprocessedFEniCSmesh, self.boundaries)
         self.right_mark = self.right.right_mark
         self.boundaries = self.right.mark_right_boundary()
 
-        self.bottom = boundaries.Bottom(self.meshObj, self.boundaries)
+        self.bottom = boundaries.Bottom(self.preprocessedFEniCSmesh, self.boundaries)
         self.bottom_mark = self.bottom.bottom_mark
         self.boundaries = self.bottom.mark_bottom_boundary() 
 
@@ -113,7 +115,7 @@ class NonLinearDynamicMechanicsProblem:
 
     
     def export_marked_boundaries(self):
-        results_export.export_PVDfile(self.results_folderpath, 'boundaries', self.boundaries)
+        export_outputs.export_PVDfile(self.results_folderpath, 'boundaries', self.boundaries)
 
 
     def initalize_subdomains(self):
@@ -131,18 +133,19 @@ class NonLinearDynamicMechanicsProblem:
         self.subdomains = self.core.mark_core()
 
     
-    def analyse_subdomains_submeshes(self):
+    def analyse_subdomains_submeshes(self, visualization):
         # Sanity check: Be sure that cortex delimitation is correctly set. Otherwise, following simulation will not make sense! 
         submesh_cortex = fenics.SubMesh(self.mesh, self.subdomains, self.cortex_mark)
         submesh_core = fenics.SubMesh(self.mesh, self.subdomains, self.core_mark)
-        fenics.plot(submesh_cortex, color='blue') 
-        #fenics.plot(submesh_core, color='green') 
-        plt.title("Cortex submesh analysis: \nif submesh presents holes -> increase 'cortical_thickness' value")
-        plt.show()  
+        if visualization == True:
+            fenics.plot(submesh_cortex, color='blue') 
+            #fenics.plot(submesh_core, color='green') 
+            plt.title("Cortex submesh analysis: \nif submesh presents holes -> increase 'cortical_thickness' value")
+            plt.show()  
 
 
     def export_marked_subdomains(self):
-        results_export.export_PVDfile(self.results_folderpath, 'subdomains', self.subdomains)
+        export_outputs.export_PVDfile(self.results_folderpath, 'subdomains', self.subdomains)
 
 
     def set_integration_measures(self):

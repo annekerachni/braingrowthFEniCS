@@ -4,7 +4,7 @@ import vedo.dolfin
 import os
 import time
 
-from braingrowth3D.braingrowthFEM.solve_problem import mappings
+from braingrowth3D.pipeline import mappings
 
 
 class NonLinearDynamicMechanicsSolver: 
@@ -27,7 +27,7 @@ class NonLinearDynamicMechanicsSolver:
 
         self.braingrowth_problem = braingrowth_problem
 
-        self.mappings = mappings.Mapping(self.braingrowth_problem.meshObj, 
+        self.mappings = mappings.Mapping(self.braingrowth_problem.preprocessedFEniCSmesh, 
                                          self.braingrowth_problem.VectorSpace_CG1_mesh, 
                                          self.braingrowth_problem.VectorSpace_CG1_bmesh)
 
@@ -44,7 +44,7 @@ class NonLinearDynamicMechanicsSolver:
     def set_solver_parameters(self, 
                               nonlinearsolver,
                               linearsolver, 
-                              linearsolver_preconditionner):
+                              linearsolver_preconditioner):
         
         """
         How to choose solver parameters:
@@ -55,6 +55,7 @@ class NonLinearDynamicMechanicsSolver:
         https://fenicsproject.org/pub/tutorial/sphinx1/._ftut1006.html#working-with-linear-solvers
 
         Solver for non linear systems:
+        https://www.emse.fr/~avril/SOFT_TISS_MECH/C7/FEA%20nonlinear%20elasticity.pdf
         https://home.simula.no/~hpl/homepage/fenics-tutorial/release-1.0/webm/nonlinear.html
         https://fenicsproject.org/pub/documents/book/fenics-book-2010-05-07.pdf
         https://fenicsproject.discourse.group/t/setup-preconditioners-for-linear-solver-in-nonlinearvariationalsolver/2565
@@ -74,7 +75,7 @@ class NonLinearDynamicMechanicsSolver:
         # DIRECT OR ITERATIVE SOLVER PARAMETERS FOR LINEARIZED PROBLEM 
         # ------------------------------------------------------------
         nonlinearpb_prm['newton_solver']['linear_solver'] = linearsolver # linearized problem: AU=B --> Choose between direct method U=A⁻¹B O(N³) (e.g. 'mumps') or iterative/Krylov subspaces method U=A⁻¹B~(b + Ab + A²b + ...) O(num_iter * N²) (e.g. 'gmres' for non-symmetric problem , 'cg') to compute A⁻¹. See http://hplgit.github.io/fenics-tutorial/pub/html/._ftut1012.html; https://fenicsproject.org/pub/tutorial/html/._ftut1017.html#ftut:app:solver:prec
-        nonlinearpb_prm['newton_solver']['preconditioner'] = linearsolver_preconditionner # Preconditionner enables to reduce computationnal cost. https://computationalmechanics.in/preconditioners/
+        nonlinearpb_prm['newton_solver']['preconditioner'] = linearsolver_preconditioner # preconditioner enables to reduce computational cost. https://computationalmechanics.in/preconditioners/
         nonlinearpb_prm['newton_solver']['krylov_solver']['absolute_tolerance'] = 1E-9 
         nonlinearpb_prm['newton_solver']['krylov_solver']['relative_tolerance'] = 1E-7 
         nonlinearpb_prm['newton_solver']['krylov_solver']['maximum_iterations'] = 1000 # number of iterations with Krylov subspace method
@@ -94,7 +95,7 @@ class NonLinearDynamicMechanicsSolver:
         self.displacements_xdmf.parameters["rewrite_function_mesh"] = True # https://fenicsproject.discourse.group/t/how-to-write-a-xdmf-file-which-has-mesh-static-over-time/708
 
 
-    def launch_simulation(self):
+    def launch_simulation(self, visualization):
 
         self.initalize_results_export()
 
@@ -140,8 +141,9 @@ class NonLinearDynamicMechanicsSolver:
             # update normal vectors at brainsurface boundary
             # ----------------------------------------------
             self.braingrowth_problem.BoundaryMesh_Nt.assign( self.braingrowth_problem.growthtensor.compute_topboundary_normals(self.braingrowth_problem.mesh, self.braingrowth_problem.ds, self.braingrowth_problem.VectorSpace_CG1_mesh, self.braingrowth_problem.brainsurface_mark) ) # BoundaryMesh_Nt
-            #vedo.dolfin.plot(self.braingrowth_problem.BoundaryMesh_Nt, mode="mesh arrows", text="Step {} / {}: \nMesh at time {} / tmax={}\nNormals to BrainSurface".format(step_to_be_applied, self.number_steps, t_current, self.tmax), style="matplotlib", axes=4, azimuth=0, interactive=False, viewup=["0.","0.","1."], scale=0.05).clear()
-            #time.sleep(2.)
+            """ if visualization == True:
+                vedo.dolfin.plot(self.braingrowth_problem.BoundaryMesh_Nt, mode="mesh arrows", text="Step {} / {}: \nMesh at time {} / tmax={}\nNormals to BrainSurface".format(step_to_be_applied, self.number_steps, t_current, self.tmax), style="matplotlib", axes=4, azimuth=0, interactive=False, viewup=["0.","0.","1."], scale=0.05).clear()
+                time.sleep(2.) """
 
 
             # Compute new mesh coordinates
@@ -153,8 +155,9 @@ class NonLinearDynamicMechanicsSolver:
             # update the projected normal vectors at all mesh points  
             # ------------------------------------------------------                                                                            
             self.braingrowth_problem.Mesh_Nt.assign( self.braingrowth_problem.growthtensor.compute_mesh_projected_normals(mesh_vertex_coords, bmeshB_vertex_coords, self.mappings.vertexB_2_dofinVref_mapping, self.mappings.vertex2dofs_V, self.braingrowth_problem.Mesh_Nt, self.braingrowth_problem.BoundaryMesh_Nt) )
-            #vedo.dolfin.plot(self.braingrowth_problem.Mesh_Nt, mode="arrows", wireframe=True, text="Step {} / {}: \nMesh at time {} / tmax={}\nProjected Normals onto Mesh".format(step_to_be_applied, self.number_steps, t_current, self.tmax), style="matplotlib", axes=4, camera=dict(pos=(-6., -12., -6.)), scale=0.03, interactive=False).clear()
-            #time.sleep(2.)
+            """ if visualization == True:
+                vedo.dolfin.plot(self.braingrowth_problem.Mesh_Nt, mode="arrows", wireframe=True, text="Step {} / {}: \nMesh at time {} / tmax={}\nProjected Normals onto Mesh".format(step_to_be_applied, self.number_steps, t_current, self.tmax), style="matplotlib", axes=4, camera=dict(pos=(-6., -12., -6.)), scale=0.03, interactive=False).clear()
+                time.sleep(2.) """
 
 
             # Solve for new (Lagrangian) displacement   
@@ -166,8 +169,9 @@ class NonLinearDynamicMechanicsSolver:
             self.displacements_xdmf.write(self.braingrowth_problem.u_solution, t_current) # display current mesh at t_current and displacement 'u_solution' to be applied
             #displacements_xdmf.write_mesh(fenics_mesh, t_current)
             #displacements_xdmf.write_meshtags(facet_tags)
-            vedo.dolfin.plot(self.braingrowth_problem.u_solution, mode='displace', text="Step {} / {}:\nMesh at time {} / tmax={}\nDisplacement to be applied".format(step_to_be_applied, self.number_steps, t_current, self.tmax), style='paraview', axes=4, camera=dict(pos=(-6., -12., -6.)), interactive=False).clear() # plot options https://vedo.embl.es/autodocs/content/vedo/dolfin.html
-            #time.sleep(2.)   
+            if visualization == True:
+                vedo.dolfin.plot(self.braingrowth_problem.u_solution, mode='displace', text="Step {} / {}:\nMesh at time {} / tmax={}\nDisplacement to be applied".format(step_to_be_applied, self.number_steps, t_current, self.tmax), style='paraview', axes=4, camera=dict(pos=(-6., -12., -6.)), interactive=False).clear() # plot options https://vedo.embl.es/autodocs/content/vedo/dolfin.html
+                #time.sleep(2.)   
 
 
             # move the mesh (to be able to compute new Normals) https://fenicsproject.discourse.group/t/how-to-compute-display-normals-to-one-deforming-boundary/9656/6
@@ -180,10 +184,12 @@ class NonLinearDynamicMechanicsSolver:
             # Update old fields with new quantities
             # -------------------------------------
             self.braingrowth_problem.timeintegrator.update_fields()
-            #vedo.dolfin.plot(self.braingrowth_problem.u_solution, mode='displace', text="After Step {} / {}:\nMesh at time {} / tmax={}\nDisplacement that was applied during the step".format(step_to_be_applied, self.number_steps, t_reached, self.tmax), style='paraview', axes=4, camera=dict(pos=(-6., -12., -6.)), interactive=False).clear() # plot options https://vedo.embl.es/autodocs/content/vedo/dolfin.html
+            # if visualization == True:
+                # vedo.dolfin.plot(self.braingrowth_problem.u_solution, mode='displace', text="After Step {} / {}:\nMesh at time {} / tmax={}\nDisplacement that was applied during the step".format(step_to_be_applied, self.number_steps, t_reached, self.tmax), style='paraview', axes=4, camera=dict(pos=(-6., -12., -6.)), interactive=False).clear() # plot options https://vedo.embl.es/autodocs/content/vedo/dolfin.html
 
 
         # Plot final deformed mesh
-        vedo.dolfin.plot(self.braingrowth_problem.mesh, mode='mesh', text="Mesh at final time {}".format(t_reached), style='paraview', axes=4, camera=dict(pos=(-6., -12., -6.)), interactive=True).clear()  
+        if visualization == True:
+            vedo.dolfin.plot(self.braingrowth_problem.mesh, mode='mesh', text="Mesh at final time {}".format(t_reached), style='paraview', axes=4, camera=dict(pos=(-6., -12., -6.)), interactive=True).clear()  
 
         

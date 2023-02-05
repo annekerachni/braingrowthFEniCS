@@ -5,7 +5,7 @@ from numba import njit, objmode
 
 # Normalize initial mesh coordinates
 @njit
-def normalise_coord(coordinates0):
+def normalize(coordinates0, center_of_gravity):
 
   maxx = maxy = maxz = -1e9
   minx = miny = minz = 1e9
@@ -25,8 +25,6 @@ def normalise_coord(coordinates0):
   center_of_gravity_Y_0 = 0.5 * (miny + maxy)
   center_of_gravity_Z_0 = 0.5 * (minz + maxz)    
   center_of_gravity = np.array([center_of_gravity_X_0, center_of_gravity_Y_0, center_of_gravity_Z_0])
-  with objmode(): 
-    print('mesh0 COG = [xG_0:{}, yG_0:{}, zG_0:{}]'.format(center_of_gravity_X_0, center_of_gravity_Y_0, center_of_gravity_Z_0))
 
   with objmode(): 
     print('minx_0 is {}, maxx_0 is {}'.format(minx, maxx))
