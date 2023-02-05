@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth elastodynamics 3D model')
     parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=True) 
     parser.add_argument('-o', '--output', help='Output folder path', type=str, required=True)
-    parser.add_argument('-n', '--normalization', help='Normalization of the input mesh (required by braingrowthFEniCS)', type=bool, required=True, default=True)
+    parser.add_argument('-n', '--normalization', help='Is normalization of the input mesh required? (required by braingrowthFEniCS)', type=bool, required=True, default=True)
     parser.add_argument('-prm', '--parameters', help='Specific model parameters file path (json)', type=str, required=True) 
     parser.add_argument('-nls', '--nonlinearsolver', help='Solver for non-linear residual form', type=str, required=False, default='newton') # Method used to solve non linear variational form -> linearization of the residual form: https://www.emse.fr/~avril/SOFT_TISS_MECH/C7/FEA%20nonlinear%20elasticity.pdf
     parser.add_argument('-ls', '--linearsolver', help='Iterative solver for linearized residual form', type=str, required=False, default='gmres') # Residual form F(u,v) = a(u,v) -l(v) to minimize => AU=L, with A nonlinear => U=A⁻¹L. Linear solver must be chosen between 'direct' or 'iterative' one. In case of 3D, 'iterative' theoritically reduces algorithm complexity to O(N².Niter) instead of O(N³).
