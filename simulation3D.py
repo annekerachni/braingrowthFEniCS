@@ -9,8 +9,6 @@ import json
 from braingrowth3D import preprocessing
 from braingrowth3D.pipeline import problem
 from braingrowth3D.pipeline import solver
-from utils import normalize_mesh
-from utils.converters import mesh_format_converters_3D
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth elastodynamics 3D model')
