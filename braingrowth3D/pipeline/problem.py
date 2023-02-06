@@ -4,8 +4,7 @@ import fenics
 import matplotlib.pyplot as plt
 
 from braingrowth3D.pipeline import boundaries, subdomains, growth, kinematics, material, numericalscheme
-#from ... import export_outputs
-import export_outputs
+from utils import export_outputs
 
 
 class NonLinearDynamicMechanicsProblem:
