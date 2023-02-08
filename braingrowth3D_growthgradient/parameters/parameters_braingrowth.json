@@ -1,0 +1,50 @@
+{
+  
+  "subdomains_definition_parameters" : { "cortical_thickness_0": 0.042 },
+  
+  "dirichlet_bcs_parameters" : {
+  				                      "consider_brainsurface_bc_TrueorFalse": false, 
+                                "brainsurface_bc": null
+                               },
+                               
+  "growth_parameters" : {
+                          "gr_TAN": 1.0, 
+                          "gr_RAD": 1.0,
+                          "alpha_TAN": 1.829,  
+                          "alpha_RAD": 0.0
+                          },
+                             
+  "brain_material_parameters" : {
+  				                       "type":"elastic",
+                                 "constitutive_model": "neo_hookean",
+                                 "rho": 0.01,  
+                            	   "damping": 0.5,
+                                 "k": 5.0 
+                                },
+                             
+  "cortex_material_parameters" : {
+  				                        "mu": 1.0
+                                 },
+                                 
+  "core_material_parameters" : {
+  				                      "mu": 1.167
+                               },
+                               
+  "body_forces" : [0.0, 0.0, 0.0],
+
+  "simulation_time_parameters" : {
+                                  "tmax": 1.0,
+                                  "number_steps": 100
+                                  },
+                                
+  "temporal_discretization_parameters" : {
+                                          "alphaM": 0.2,
+                                          "alphaF": 0.4
+                                        },                                
+  "solver_parameters" : {
+                        "nonlinearsolver": "newton",
+                        "linearsolver": "gmres",
+                        "preconditioner": "sor"
+                        }
+        
+}
