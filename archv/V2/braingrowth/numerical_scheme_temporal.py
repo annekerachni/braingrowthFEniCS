@@ -1,4 +1,4 @@
-import fenics
+# Code source: https://comet-fenics.readthedocs.io/en/latest/demo/elastodynamics/demo_elastodynamics.py.html
 
 # Time integration numerical scheme
 ###################################

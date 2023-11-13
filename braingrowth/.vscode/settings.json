@@ -1,0 +1,6 @@
+{
+    "editor.rename.enablePreview": true,
+    "workbench.colorTheme": "Dark+ Python",
+    "workbench.editor.enablePreview": false,
+    "editor.suggest.showColors": true
+}

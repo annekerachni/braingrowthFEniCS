@@ -1,5 +1,4 @@
 import fenics
-import numpy as np
 
 # Mass form
 ###########
@@ -40,8 +39,8 @@ def k(u, v_test, Fg, mu, K, gdim):
     
     # Neo-Hookean strain energy density function
     # ------------------------------------------
-    #We = 0.5 * mu * (Tre * pow(Je, -2/3) - 3) + 0.5 * K * (Je - fenics.ln(Je) - 1) # T.Tallinen
-    We = 0.5 * mu * (Tre * pow(Je, -2/3) - 3) + 0.5 * K * (Je - 1) * (Je - 1) # X.Wang
+    We = 0.5 * mu * (Tre * pow(Je, -2/3) - 3) + 0.5 * K * (Je - fenics.ln(Je) - 1) # T.Tallinen
+    #We = 0.5 * mu * (Tre * pow(Je, -2/3) - 3) + 0.5 * K * (Je - 1) * (Je - 1) # X.Wang
 
     # Cauchy stress (elastic part)
     # -------------
@@ -50,23 +49,10 @@ def k(u, v_test, Fg, mu, K, gdim):
     
     # 1st Piola-Kirchhoff stress (elastic part)
     # --------------------------
-    """ PK1e = fenics.variable( Je * Te * fenics.inv(Fe.T) ) """# X.Wang (originel BrainGrowth simulation code)
+    PK1e = fenics.variable( Je * Te * fenics.inv(Fe.T) )# X.Wang (originel BrainGrowth simulation code)
     #PK1e = fenics.diff(We, Fe)
-
-    # Need to translate Pelastic into Ptotal to apply the equilibrium balance momentum law.
-    PK1tot = fenics.diff(We, F) 
     
-    """
-    # Elastic second Piola-Kirchhoff stress tensor
-    PK2e = 2 * fenics.diff(We, Tre) * Id + Je * Je * fenics.diff(We, Je) * fenics.inv(Ce)
-    # Total second Piola-Kirchhoff stress
-    PK2tot = fenics.variable( fenics.det(Fg) ) * Fg_inv * PK2e * Fg_inv
-    # Total first Piola-Kirchhoff stress tensor
-    PK1tot = F * PK2tot
-    """
-    
-    #return fenics.inner(PK1e, fenics.grad(v_test)) * fenics.Measure("dx") 
-    return fenics.inner(PK1tot, fenics.grad(v_test)) * fenics.Measure("dx") 
+    return fenics.inner(PK1e, fenics.grad(v_test)) * fenics.Measure("dx") 
 
 # 
 

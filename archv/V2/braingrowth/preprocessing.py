@@ -1,6 +1,3 @@
-"""Create input geometry meshes to be used by FEniCS"""
-
-import fenics 
 import numpy as np
 from scipy.spatial import cKDTree
 from numba import prange
@@ -86,37 +83,21 @@ def normalize_mesh(mesh, characteristics, center_of_gravity):
     """
 
     # Compute maximum distance to barycenter 
-    maxX = max( abs(characteristics['maxx'] - center_of_gravity[0]), abs(characteristics['minx'] - center_of_gravity[0]) )
-    maxY = max( abs(characteristics['maxy'] - center_of_gravity[1]), abs(characteristics['miny'] - center_of_gravity[1]) )
-    maxZ = max( abs(characteristics['maxz'] - center_of_gravity[2]), abs(characteristics['minz'] - center_of_gravity[2]) )
+    maxd = max(
+                max(max(abs(characteristics['maxx']-center_of_gravity[0]), abs(characteristics['minx']-center_of_gravity[0])), 
+                    max(abs(characteristics['maxy']-center_of_gravity[1]), abs(characteristics['miny']-center_of_gravity[1]))), 
 
-    max_distance_to_COG = max( max(maxX, maxY), maxZ)
+                max(abs(characteristics['maxz']-center_of_gravity[2]), abs(characteristics['minz']-center_of_gravity[2]))
+                )
+    
+    # Normalize coordinates: change referential to the COG one and normalize coordinates with maximum distance to barycenter 
+    mesh.coordinates()[:,0] = -(mesh.coordinates()[:,0] - center_of_gravity[0])/maxd 
+    mesh.coordinates()[:,1] = (mesh.coordinates()[:,1] - center_of_gravity[1])/maxd
+    mesh.coordinates()[:,2] = -(mesh.coordinates()[:,2] - center_of_gravity[2])/maxd
 
-    # longitudinal axis of the brain should be oriented in the Y direction (RAS orientation)
-    # supposing the longidtudinal axis of the initial mesh is well parallel to one axis x, y or z. If oblique initial mesh, does not wotk.
-    if max_distance_to_COG == maxX:
-        # Normalize coordinates: change referential to the COG one and normalize coordinates with maximum distance to barycenter 
-        tmp = mesh.coordinates()[:,0].copy()
-        mesh.coordinates()[:,0] = - (mesh.coordinates()[:,1] - center_of_gravity[1])/max_distance_to_COG 
-        mesh.coordinates()[:,1] = - (tmp - center_of_gravity[0])/max_distance_to_COG
-        mesh.coordinates()[:,2] = - (mesh.coordinates()[:,2] - center_of_gravity[2])/max_distance_to_COG
-        
-    elif max_distance_to_COG == maxY:
-        # Normalize coordinates: change referential to the COG one and normalize coordinates with maximum distance to barycenter 
-        mesh.coordinates()[:,0] = - (mesh.coordinates()[:,0] - center_of_gravity[0])/max_distance_to_COG 
-        mesh.coordinates()[:,1] = (mesh.coordinates()[:,1] - center_of_gravity[1])/max_distance_to_COG
-        mesh.coordinates()[:,2] = - (mesh.coordinates()[:,2] - center_of_gravity[2])/max_distance_to_COG
-
-    elif max_distance_to_COG == maxZ: # 
-        # Normalize coordinates: change referential to the COG one and normalize coordinates with maximum distance to barycenter 
-        mesh.coordinates()[:,0] = - (mesh.coordinates()[:,0] - center_of_gravity[0])/max_distance_to_COG 
-        mesh.coordinates()[:,1] = (mesh.coordinates()[:,2] - center_of_gravity[2])/max_distance_to_COG
-        mesh.coordinates()[:,2] = - (mesh.coordinates()[:,1] - center_of_gravity[1])/max_distance_to_COG
-
-
-    print('normalized minx: {}, normalized maxx: {}'.format(min(mesh.coordinates()[:,0]), max(mesh.coordinates()[:,0])))
-    print('normalized miny: {}, normalized maxy: {}'.format(min(mesh.coordinates()[:,1]), max(mesh.coordinates()[:,1])))
-    print('normalized minz: {}, normalized maxz: {}'.format(min(mesh.coordinates()[:,2]), max(mesh.coordinates()[:,2])))
+    print('normalized minx is {}, normalized maxx is {}'.format(min(mesh.coordinates()[:,0]), max(mesh.coordinates()[:,0])))
+    print('normalized miny is {}, normalized maxy is {}'.format(min(mesh.coordinates()[:,1]), max(mesh.coordinates()[:,1])))
+    print('normalized minz is {}, normalized maxz is {}'.format(min(mesh.coordinates()[:,2]), max(mesh.coordinates()[:,2])))
 
     return mesh
     

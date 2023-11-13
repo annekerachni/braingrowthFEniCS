@@ -63,6 +63,9 @@ if __name__ == '__main__':
     
     parser.add_argument('-o', '--outputmesh', help='Output mesh path (.xdmf)', type=str, required=False, 
                         default='./data/gmsh/sphere/sphere_algoDelaunay1_tets005.xdmf') 
+    
+    parser.add_argument('-r', '--refinement', help='Is refinement near by the boundary required?', type=bool, required=False, 
+                        default=False) 
 
     parser.add_argument('-rfc', '--refinementwidthcoef', help='refinement width coef', type=int, required=False, 
                         default=10)  
@@ -86,51 +89,37 @@ if __name__ == '__main__':
     mesh = meshio.read(msh_input_file_path) 
     msh_to_xdmf(msh_input_file_path, xdmf_output_file_path)
 
+    if args.refinement == True:
+        # refine .xdmf mesh
+        # -----------------
+        # read FEniCS mesh 
+        FEniCSmesh_to_refine = fenics.Mesh()
+        with fenics.XDMFFile(xdmf_output_file_path) as infile:
+            infile.read(FEniCSmesh_to_refine)
 
-    # refine .xdmf mesh
-    # -----------------
+        vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
 
-    """ mesh = fenics.Mesh()
-    f = fenics.XDMFFile(xdmf_output_file_path)
-    f.read(mesh)
+        # min mesh spacing
+        min_mesh_spacing = compute_min_mesh_spacing(FEniCSmesh_to_refine)
 
-    outfile = fenics.XDMFFile("mesh_to_refine.xdmf").write(mesh) """
+        # get required args for refinement function
+        brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
 
-    # read FEniCS mesh 
-    #FEniCSmesh_to_refine = fenics.Mesh(xdmf_output_file_path)
-    FEniCSmesh_to_refine = fenics.Mesh()
-    with fenics.XDMFFile(xdmf_output_file_path) as infile:
-        infile.read(FEniCSmesh_to_refine)
+        brainsurface_bmesh_bbtree = fenics.BoundingBoxTree()
+        brainsurface_bmesh_bbtree.build(brainsurface_bmesh)  
 
-    #comm = MPI.COMM_WORLD # https://fenicsproject.discourse.group/t/mesh-conversion-xdmf-in-a-mpi-environment/3499
-    #size = comm.Get_size()
-    #rank = comm.Get_rank()
-    
-    #f = fenics.XDMFFile(comm, xdmf_output_file_path)
-    #f.read(FEniCSmesh_to_refine, True)
-    vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
+        # refined mesh
+        refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
+                                                                  brainsurface_bmesh_bbtree, 
+                                                                  min_mesh_spacing, 
+                                                                  refinement_width_coef)
+        
+        # generate XDMF refined mesh
+        # --------------------------
+        with fenics.XDMFFile(MPI.COMM_WORLD, refined_xdmf_output_file_path) as xdmf:
+            xdmf.write(refined_FEniCSmesh)
 
-    # min mesh spacing
-    min_mesh_spacing = compute_min_mesh_spacing(FEniCSmesh_to_refine)
-
-    # get required args for refinement function
-    brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
-
-    brainsurface_bmesh_bbtree = fenics.BoundingBoxTree()
-    brainsurface_bmesh_bbtree.build(brainsurface_bmesh)  
-
-    # refined mesh
-    refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
-                                                              brainsurface_bmesh_bbtree, 
-                                                              min_mesh_spacing, 
-                                                              refinement_width_coef)
-    
-    # generate XDMF refined mesh
-    # --------------------------
-    with fenics.XDMFFile(MPI.COMM_WORLD, refined_xdmf_output_file_path) as xdmf:
-        xdmf.write(refined_FEniCSmesh)
-
-    vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
+        vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
 
 
     
