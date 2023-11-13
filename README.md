@@ -1,12 +1,21 @@
 # braingrowthFEniCS
- 2D/3D FEniCS-based model to investigate brain growth-induced folding process
+SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D/3D model)
  
 ## Presentation
-brain growth mechanics model developped with the FEniCS library:
-- Non linear elastodynamics
-- Numerical methods:  (dynamics ~ high wave frequency model) 
-    - discretization of the spatial domain: Finite Element Method 
-    - time integration: generalized-alpha method
+brain growth mechanics model:
+- problem:
+  - balance of the linear momentum -> damped elastodynamics PDE
+  - kinematics: F = Fe.Fg (multiplicative decomposition of the deformation into elastic and growth deformations), with Fg tangential and differential.
+  - 
+- boundary conditions: traction-free (Neumann)
+- growth kinetics: linear and homogeneous 
+
+computational model implemented with the FEniCS library:
+- Discretization of the spatial domain with Finite Element Method (Lagrange, degree 1)
+- Solver 
+  - linearization method: Newton-Raphson
+  - lienar solver + preconditioner : ‘gmres’ + ‘sor’ 
+- Temporal integration method : generalized-alpha method 
 
 ## References
 - [1] - T.Tallinen, F. Rousseau, J.Lefèvre, X.Wang et al. https://github.com/rousseau/BrainGrowth
