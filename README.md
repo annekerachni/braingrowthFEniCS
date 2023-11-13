@@ -1,8 +1,9 @@
 # braingrowthFEniCS
-SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D/3D model)
  
 ## Presentation
-### Brain growth mechanics model:
+SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D/3D model)
+
+#### Brain growth mechanics model:
 - problem:
   - balance of the linear momentum -> damped elastodynamics PDE
   - kinematics: F = Fe.Fg (multiplicative decomposition of the deformation into elastic and growth deformations), with Fg tangential and differential.
@@ -10,7 +11,7 @@ SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D
 - boundary conditions: traction-free (Neumann)
 - growth kinetics: linear and homogeneous 
 
-### Computational model implemented with the FEniCS library:
+#### Computational model implemented with the FEniCS library:
 - Discretization of the spatial domain with Finite Element Method (Lagrange, degree 1)
 - Solver 
   - linearization method: Newton-Raphson
