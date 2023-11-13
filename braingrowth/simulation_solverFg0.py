@@ -352,14 +352,14 @@ if __name__ == '__main__':
     coordinates_old = np.zeros((n_surface_nodes,3), dtype = np.float64)  #Stores positions when proximity list is updated
     NNLt = [[] for _ in range (n_surface_nodes)] #Triangle-proximity lists for surface nodes
 
-    Ft, NNLt = contact.contact_forces_Tallinen(NNLt, 
+    Ft, NNLt = contact.contact_mechanics_Tallinen(NNLt, 
                                                V, vertexB_2_dofsV_mapping, 
                                                S, vertexBoundaryMesh_2_dofScalarFunctionSpaceWholeMesh_mapping,
                                                K, average_mesh_spacing, gr, 
                                                mesh, bmesh, coordinates_old)
     """
     
-    Ft = contact.contact_forces_V2(mesh, bmesh, V, 
+    Ft = contact.contact_mechanics_V2(mesh, bmesh, V, 
                                    vertex2dofs_V, vertexB_2_dofsV_mapping, vertexWholeMeshIDX_to_projectedVertexBoundaryMeshIDX_mapping_t0, 
                                    K, average_mesh_spacing)
 
@@ -458,13 +458,13 @@ if __name__ == '__main__':
         bmesh = fenics.BoundaryMesh(mesh, "exterior") # cortex envelop #print("\nupdating boundarymesh...")
         
         """
-        Ft, NNLt = contact.contact_forces_Tallinen(NNLt, 
+        Ft, NNLt = contact.contact_mechanics_Tallinen(NNLt, 
                                                    V, vertexB_2_dofsV_mapping, 
                                                    S, vertexBoundaryMesh_2_dofScalarFunctionSpaceWholeMesh_mapping,
                                                    K, average_mesh_spacing, gr, 
                                                    mesh, bmesh, coordinates_old) """
         
-        Ft = contact.contact_forces_V2(mesh, bmesh, V, 
+        Ft = contact.contact_mechanics_V2(mesh, bmesh, V, 
                                        vertex2dofs_V, vertexB_2_dofsV_mapping, vertexWholeMeshIDX_to_projectedVertexBoundaryMeshIDX_mapping_t0, 
                                        K, average_mesh_spacing)
         
