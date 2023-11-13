@@ -80,7 +80,7 @@ def contact_forces_Tallinen(r12vec, Kc, mean_mesh_spacing, epsilon):
 # FEniCS-based contact mechanics # 
 ##################################
 
-def contact_forces(mesh, V, K, vertex2dofs_V, vertexB_2_dofsV_mapping):
+def contact_mechanics(mesh, V, K, vertex2dofs_V, vertexB_2_dofsV_mapping):
     """detect global collisions in the whole mesh and compute global contact forces"""
 
     # 1. Detect collision in the mesh
@@ -162,7 +162,7 @@ def contact_forces(mesh, V, K, vertex2dofs_V, vertexB_2_dofsV_mapping):
     return fcontact_global
 
 
-def contact_forces_V2(mesh, bmesh, V,
+def contact_mechanics_V2(mesh, bmesh, V,
                       vertex2dofs_V, vertexB_2_dofsV_mapping, vertexWholeMeshIDX_to_projectedVertexBoundaryMeshIDX_mapping_t0, 
                       K, mean_mesh_spacing):
     """detect global collisions in the whole mesh and compute global contact forces"""
@@ -410,7 +410,7 @@ def createNNLtriangle(NNLt, average_mesh_spacing,
 
     return NNLt
 
-def contact_forces_Tallinen(NNLt, 
+def contact_mechanics_Tallinen(NNLt, 
                             V, vertexB_2_dofsV_mapping,
                             S, vertexBoundaryMesh_2_dofScalarFunctionSpaceWholeMesh_mapping,
                             K, average_mesh_spacing, gr,
