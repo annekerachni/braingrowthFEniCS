@@ -6,7 +6,7 @@ SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D
 - problem:
   - balance of the linear momentum -> damped elastodynamics PDE
   - kinematics: F = Fe.Fg (multiplicative decomposition of the deformation into elastic and growth deformations), with Fg tangential and differential.
-  - 
+- constitutive model: Neo-Hookean
 - boundary conditions: traction-free (Neumann)
 - growth kinetics: linear and homogeneous 
 
