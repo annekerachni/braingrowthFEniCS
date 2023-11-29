@@ -5,7 +5,7 @@ SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D
 
 #### Brain growth mechanics model:
 - problem:
-  - balance of the linear momentum -> damped elastodynamics PDE
+  - balance of the linear momentum &#8594; damped elastodynamics PDE
   - kinematics: F = Fe.Fg (multiplicative decomposition of the deformation into elastic and growth deformations), with Fg tangential and differential.
 - constitutive model: Neo-Hookean
 - boundary conditions: traction-free (Neumann)
@@ -19,6 +19,9 @@ SIMULATING THE EMERGENCE OF THE EARLY HUMAN BRAIN CORTICAL FOLDS WITH FENICS (2D
 - Temporal integration method : generalized-alpha method
 
 ## Launch brain growth simulation:
+The brain growth mechanics problem is solved with the open-source FEniCS code (version 2019.1.0).
+- Create a virtual env with anaconda to use FEniCS: `conda create -n fenicsvenv -c conda-forge fenics`
+- Launch the command:
 `python3 -i ./braingrowth/simulation_solverFg0.py -i './data/dhcp21GW_17K_refined10.xml' -n True -p '{"H0": 0.04, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 10.0, "alphaTAN": 4.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 0.5, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}' -o './simulations/dhcp/' `
 
 ## References
