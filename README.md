@@ -1,7 +1,7 @@
 # braingrowthFEniCS
  
 ## Presentation
-"braingrowthFEniCS" is simulation framework for 3D human brain folding simulation. It includes a computational model of the brain growth dynamics, implemented in Python with the FEniCS library (version 2019.1.0) and 
+"braingrowthFEniCS" is simulation framework for 3D human brain folding simulation. It includes a computational model of the brain growth dynamics, implemented in Python with the FEniCS library (version 2019.1.0). 
 - The brain growth model `braingrowth` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
 - The simulation pipeline and relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `nifti2mesh`, `metrics`, `utils`.
 
@@ -23,7 +23,7 @@
 
 ## Simulation 
 #### Framework
-
+![simulation_framework](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/abd59aaf-22aa-4c5f-a8dd-89c3fc85addc)
 
 #### Launch brain growth simulation:
 The brain growth mechanics problem is solved with the open-source FEniCS code (version 2019.1.0).
@@ -44,4 +44,6 @@ The brain growth mechanics problem is solved with the open-source FEniCS code (v
 - S.Budday, On the influence of inhomogeneous stiffness and growth on mechanical instabilities in the developing brain. 2018
 - M.A. Holland et al, "Emerging brain morphologies from axonal elongation." Annals of biomedical engineering 43:1640-1653, 2015
 - P.Bayly et al., A cortical folding model incorporating stress-dependent growth explains gyral wavelengths and stress patterns in the developing brain. Physics Biology, 2013
+
+- fetal MRI atlas from the dHCP project: https://gin.g-node.org/kcl_cdb/fetal_brain_mri_atlas
 
