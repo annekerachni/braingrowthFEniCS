@@ -14,7 +14,7 @@
 - boundary conditions: traction-free (Neumann)
 - growth kinetics: linear and homogeneous
 - tangential growth tensor
-  ![dgTAN](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/35f7b097-d48e-47f8-b2f8-2b4fb122e099)
+  ![dgTAN_1](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/e6bc9336-30ae-43ae-9db2-ca8799c69a04)
 
 #### Dicretization of the problem + FEniCS solver parameters:
 - Discretization of the spatial domain with Finite Element Method (Lagrange, degree 1)
