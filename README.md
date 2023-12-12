@@ -30,7 +30,7 @@
 ## Simulation 
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: `conda create -n fenicsvenv -c conda-forge fenics`
-- Simulations can be launched on sphere ones via `simulation_spheregrowth` or on on brain geometries via `simulation_braingrowth`
+- Simulations can be launched on sphere geometries via `simulation_spheregrowth` or on brain ones via `simulation_braingrowth`
 - e.g. launch command: `python3 -i ./simulation_braingrowth/main.py -i './data/dhcp21GW_17K_refined10.xml' -n True -p '{"H0": 0.04, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 10.0, "alphaTAN": 4.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 0.5, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}' -o './simulations/dhcp/' `
 
 ## References
