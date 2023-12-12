@@ -5,11 +5,11 @@
 
 ![simulation_framework](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/abd59aaf-22aa-4c5f-a8dd-89c3fc85addc)
 
-- The computational biomechanical model `FEM_biomechanical_model` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
+- The biomechanical model `FEM_biomechanical_model` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
   
 - The whole simulation pipeline relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `nifti2mesh`, `metrics`, `utils`
 
-## The biomechanical model
+## Biomechanical model
 #### Brain growth mechanics:
 - problem:
   - balance of the linear momentum &#8594; damped elastodynamics PDE
