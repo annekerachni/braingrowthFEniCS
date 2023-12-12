@@ -1,11 +1,15 @@
 # braingrowthFEniCS
  
 ## Presentation
-"braingrowthFEniCS" is simulation framework for 3D human brain folding simulation. It includes a computational model of the brain growth dynamics, implemented in Python with the FEniCS library (version 2019.1.0). 
-- The brain growth model `braingrowth` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
-- The simulation pipeline and relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `nifti2mesh`, `metrics`, `utils`.
+**braingrowthFEniCS** is a simulation framework for 3D human brain folding simulation. It includes a computational model of the brain growth dynamics, implemented in Python with the FEniCS library (version 2019.1.0). 
 
-## The brain growth model
+![simulation_framework](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/abd59aaf-22aa-4c5f-a8dd-89c3fc85addc)
+
+- The computational biomechanical model `FEM_biomechanical_model` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
+  
+- The whole simulation pipeline relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `nifti2mesh`, `metrics`, `utils`
+
+## The biomechanical model
 #### Brain growth mechanics:
 - problem:
   - balance of the linear momentum &#8594; damped elastodynamics PDE
@@ -24,13 +28,10 @@
 - Temporal integration method : generalized-alpha method
 
 ## Simulation 
-#### Framework
-![simulation_framework](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/abd59aaf-22aa-4c5f-a8dd-89c3fc85addc)
-
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: `conda create -n fenicsvenv -c conda-forge fenics`
-- Launch the command:
-`python3 -i ./braingrowth/main_solverFg0.py -i './data/dhcp21GW_17K_refined10.xml' -n True -p '{"H0": 0.04, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 10.0, "alphaTAN": 4.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 0.5, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}' -o './simulations/dhcp/' `
+- Simulations can be launched on sphere ones via `simulation_spheregrowth` or on on brain geometries via `simulation_braingrowth`
+- e.g. launch command: `python3 -i ./simulation_braingrowth/main.py -i './data/dhcp21GW_17K_refined10.xml' -n True -p '{"H0": 0.04, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 10.0, "alphaTAN": 4.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 0.5, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}' -o './simulations/dhcp/' `
 
 ## References
 - T. Tallinen et al., On the growth and form of cortical convolutions. Nature Physics, 12(6):588–593, 2016 
