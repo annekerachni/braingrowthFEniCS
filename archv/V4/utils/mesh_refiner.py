@@ -2,16 +2,17 @@ import fenics
 import vedo.dolfin
 import sys
 sys.path.append(".")
+
 import numpy as np
 
-from FEM_biomechanical_model import preprocessing
+from braingrowth.program import preprocessing
 
 def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode):
 
     # Load input mesh
     # ---------------
-    input_path = mesh_to_refine_XMLpath 
-    mesh = fenics.Mesh(input_path) 
+    input_path = mesh_to_refine_XMLpath # './data/ellipsoid/sphere5.xml'  './data/gmsh/sphere/sphere_algoDelaunay1_tets005.xml'
+    mesh = fenics.Mesh(input_path) # 6761 nodes, 35497 tets
     # n_nodes = mesh.num_vertices()
     # n_tets = mesh.num_cells()
     # tets = mesh.cells()
@@ -26,12 +27,16 @@ def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode
 
     # Refine mesh
     # -----------
-    mesh2 = fenics.refine(mesh) 
+    mesh2 = fenics.refine(mesh) # 51100 nodes, 283976 tets
+    """ mesh3 = fenics.refine(mesh2) # 394503 nodes, 2271808 tets """
 
     # Export refined meshes
     # ---------------------
     file = fenics.File(refined_mesh_XMLpath) # './data/ellipsoid/sphere5_refined_284Ktets.xml'
     file << mesh2
+
+    """ file = fenics.File('./data/ellipsoid/sphere5_refined_2Mtets.xml')
+    file << mesh3 """
 
     # Plot meshes
     # -----------
@@ -69,12 +74,20 @@ def refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtr
 
 
 if __name__ == '__main__':
+    
+    """
+    python3 -i refine_mesh.py --meshtorefine './data/dhcp/dhcp_atlas/21GW/dhcp21GW_29296faces_107908tets.xml'
+                              --refinementwidthcoef 20
+                              --refinedmesh './data/dhcp/dhcp_atlas/21GW/dhcp21GW_29296faces_107908tets_refined20.xml'
+                              --visualization True
+                              --longitudinalaxis 0                           
+    """
 
     # REFINE MESH
     # -----------
     """
-    mesh_to_refine_XMLpath = './data/ellipsoid.xml'
-    refined_mesh_XMLpath = './data/ellipsoid.xml'
+    mesh_to_refine_XMLpath = './data/ellipsoid/sphere5.xml'
+    refined_mesh_XMLpath = './data/ellipsoid/sphere5_refined_284Ktets.xml'
     visualization_mode = True
     refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode)
     """
@@ -85,13 +98,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Refine the .xml input mesh near by the cortical surface')
 
     parser.add_argument('-i', '--meshtorefine', help='Path to the mesh to refine (.xml format)', type=str, required=False, 
-    default='./data/brainmesh.xml')
+    default='./data/dhcp/dhcp_atlas/21GW/dhcp21GW_29296faces_107908tets.xml')
 
     parser.add_argument('-c', '--refinementwidthcoef', help='Refinement coefficient (node for which distance to surface < refinement coef * min mesh spacing, will be in the refinement zone) e.g. 5; 10: 20', type=int, required=False, 
     default=20)
 
     parser.add_argument('-o', '--refinedmesh', help='Path where to write the refined mesh (.xml format)', type=str, required=False, 
-    default='./data/brainmesh_refined20.xml')
+    default='./data/dhcp/dhcp_atlas/21GW/dhcp21GW_29296faces_107908tets_refined20.xml')
 
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, 
     default=True)

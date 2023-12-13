@@ -34,17 +34,24 @@ def show_slices(slices, colormap): # code source: https://nipy.org/nibabel/coord
 import argparse
 import json
 if __name__ == '__main__':
+    
+    """
+    python3 -i visualize_nifti_and_segmentation.py 
+            -i '{   "nifti_T1":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t1-t21.00.nii.gz', 
+                    "nifti_T2":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t2-t21.00.nii.gz',
+                    "segmentation":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/parcellations/tissue-t21.00_dhcp-19.nii.gz' }'
+    """
 
     parser = argparse.ArgumentParser(description='Mask brain MRI nifti with selected parcels from provided segmentation')
     
     parser.add_argument('-i', '--inputdata', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=False, 
                         default={ 
                                  
-                                 "nifti_T1":'./fetal_database/structural/t1-t21.00.nii.gz',
+                                 "nifti_T1":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t1-t21.00.nii.gz',
                                  
-                                 "nifti_T2":'./fetal_database/structural/t2-t21.00.nii.gz',
+                                 "nifti_T2":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t2-t21.00.nii.gz',
                                  
-                                 "segmentation":'./fetal_database/parcellations/tissue-t21.00_dhcp-19.nii.gz'
+                                 "segmentation":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/parcellations/tissue-t21.00_dhcp-19.nii.gz'
                                  
                                  } )
     

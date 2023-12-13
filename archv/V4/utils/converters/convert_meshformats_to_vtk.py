@@ -1,8 +1,6 @@
-"""
-code source: 
+# code source: 
 # original BrainGrowth: https://github.com/rousseau/BrainGrowth/blob/master/geometry.py
 # https://fenicsproject.discourse.group/t/transitioning-from-mesh-xml-to-mesh-xdmf-from-dolfin-convert-to-meshio/412/86
-"""
 
 import meshio
 from numba.typed import List
@@ -10,45 +8,43 @@ import numpy as np
 from numba import njit, prange
 import fenics
 
-def vtk_to_xml(input_file_vtk, output_file_xml): 
+def xml_to_vtk(input_file_xml, output_file_vtk): 
     """
-    Args: mesh in VTK format
-    Returns: mesh in XML format, explotable by FEniCS (FEniCS reads XML mesh files with tetrahedrons cells). 
-    # https://fenicsproject.discourse.group/t/pygmsh-tutorial/2506/3
+    From FEniCS mesh formats, get .vtk format
     """
-    # Read input mesh (.vtk) 
-    mesh = meshio.read(input_file_vtk) 
+
+    mesh = fenics.Mesh(input_file_xml) # FEnicS object
+
+    # n_nodes = mesh.num_vertices()
+    coordinates = mesh.coordinates()
+
+    # n_tets = mesh.num_cells() 
+    tets = mesh.cells()
+
+    bmesh = fenics.BoundaryMesh(mesh, "exterior")
+    # n_faces = bmesh.num_faces() 
+    faces = bmesh.cells()
     
-    for cell in mesh.cells:
-        if cell.type == "tetra": 
-            # write output mesh (.xml)
-            tetra_mesh = meshio.Mesh(points=mesh.points, cells={"tetra": cell.data})
-            meshio.write(output_file_xml, tetra_mesh)
-            print('output file (with tetra cells) well written down in XML format')
+
+    #meshio.write(output_file_xml, meshio.Mesh(points=coordinates, cells={'tetra': tets})) 
+    vtk_mesh = meshio.Mesh(points=coordinates, cells={'tetra': tets, 'triangle': faces})
+    meshio.write(output_file_vtk, vtk_mesh)
 
     return 
 
-def msh_to_xml(input_file_msh, output_file_xml): 
+
+
+
+def msh_to_vtk(input_file_msh, output_file_vtk): 
     """
     Args: 3D mesh in MSH format (Gmsh)
     Returns: mesh in XML format, explotable by FEniCS (FEniCS reads XML mesh files with tetrahedrons cells). 
     """
     mesh = meshio.read(input_file_msh) 
-    #meshio.write(output_file_xml, meshio.Mesh(points=mesh.points, cells={'tetra': mesh.cells_dict['tetra']})) 
-    meshio.write(output_file_xml, meshio.Mesh(points=mesh.points, cells={'tetra': mesh.cells_dict['tetra'], 'triangle': mesh.cells_dict['triangle']}))
+    meshio.write(output_file_vtk, meshio.Mesh(points = mesh.points, cells = {'tetra': mesh.cells_dict['tetra']})) 
 
     return 
 
-
-def stl_to_xml_2D(input_file_stl, output_file_xml): 
-    """
-    Args: 2D mesh in STL format (stl)
-    Returns: mesh in XML format, explotable by FEniCS (FEniCS reads XML mesh files with tetrahedrons cells). 
-    """
-    mesh = meshio.read(input_file_stl) 
-    meshio.write(output_file_xml, meshio.Mesh(points = mesh.points, cells = {'triangle': mesh.cells_dict['triangle']})) 
-
-    return 
 
 def load_mesh(input_file_mesh):
     """
@@ -119,22 +115,34 @@ def get_face_indices(mesh, n_nodes, n_tets):
 
   return faces, n_faces
 
-def mesh_to_xml(output_file_xml, coordinates, tets): 
-    #can be also use as 'mesh_to_vtk': in that case, use output_file_path in .vtk 
-    meshio.write(output_file_xml, meshio.Mesh(points=coordinates, cells=[("tetra", tets)])) 
 
-    return
+def msh_to_vtk(input_file_path, output_file_vtk): 
+    #can be also use as 'mesh_to_vtk': in that case, use output_file_path in .vtk 
+    
+    # .msh to .stl
+    msh = meshio.read(input_file_path)
+    for cell in msh.cells:
+        if cell.type == "tetra":
+            tetra_cells = cell.data
+    triangle_mesh = meshio.Mesh(points=msh.points, cells={"tetra": tetra_cells})
+    meshio.write(output_file_vtk, triangle_mesh)
+
+    return 
+
+
+def mesh_to_vtk(output_file_stl, faces_coords, tets): 
+    #can be also use as 'mesh_to_vtk': in that case, use output_file_path in .vtk 
+
+    meshio.write(output_file_stl, meshio.Mesh(points=faces_coords, cells=[("tetra", tets)])) 
+
+    return 
 
 
 import argparse
-if __name__ == '__main__':  
-    parser = argparse.ArgumentParser(description='Convert mesh formats to XML (FEniCS format)')
-    
-    parser.add_argument('-i', '--input', help='Input mesh (.vtk, .msh, .mesh) path', type=str, required=False, 
-                        default='./data/brainmesh.mesh' ) 
-    
-    parser.add_argument('-o', '--output', help='Output mesh path (.xml)', type=str, required=False, 
-                        default='./data/brainmesh.xml') 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Convert Mesh to XML Fenics')
+    parser.add_argument('-i', '--input', help='Input mesh (.msh, .mesh, .xml) path', type=str, required=False, default='./data/dhcp21_145K_refinedcoef20.xml' ) # './data/dhcp/mesh/dhcpWholefull/dhcp21Whole_veryfine_3M.mesh'; './data/ellipsoid_284K.mesh'
+    parser.add_argument('-o', '--output', help='Output mesh path (.vtk)', type=str, required=False, default='./data/dhcp21GW.vtk') # './data/dhcp/mesh/dhcpWholefull/dhcp21Whole_veryfine_3M.xml'; './data/ellipsoid_284K.xml'
 
     args = parser.parse_args()
 
@@ -145,22 +153,28 @@ if __name__ == '__main__':
     outputmesh_format = output_file_path.split('.')[-1]
 
 
-    if inputmesh_format == 'vtk':
-        vtk_to_xml(input_file_path, output_file_path) 
-
-
-    elif inputmesh_format == 'msh': # Gmsh mesh
-        msh_to_xml(input_file_path, output_file_path) # resp. msh_to_vtk
+    if inputmesh_format == 'msh': # Gmsh mesh
+        msh_to_vtk(input_file_path, output_file_path)
 
     
     elif inputmesh_format == 'mesh': # Netgen mesh
+        if outputmesh_format == 'vtk': # Netgen mesh
             mesh = load_mesh(input_file_path)   
             coordinates, n_nodes = get_nodes(mesh) 
             n_tets, tets = get_tetrahedrons(mesh, n_nodes)
+            faces, n_faces = get_face_indices(mesh, n_nodes, n_tets)
 
-            mesh_to_xml(output_file_path, coordinates, tets) # resp. msh_to_vtk
-            
-    elif inputmesh_format == 'stl': # surface mesh
-        stl_to_xml_2D(input_file_path, output_file_path)
+            coordinates_faces = []
+            for face in faces: # [node1_idx, node2_idx, node3_idx]
+                node1_idx, node2_idx, node3_idx = face[0], face[1], face[2]
+                coordinates_faces.append( coordinates[node1_idx, :] )
+                coordinates_faces.append( coordinates[node2_idx, :] )
+                coordinates_faces.append( coordinates[node3_idx, :] )
+            coordinates_faces = np.array(coordinates_faces)
 
-      
+            mesh_to_vtk(output_file_path, coordinates_faces, tets) 
+
+
+    elif inputmesh_format == 'xml': # FEniCS mesh
+        if outputmesh_format == 'vtk':
+            xml_to_vtk(input_file_path, output_file_path)

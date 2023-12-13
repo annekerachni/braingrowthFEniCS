@@ -1,9 +1,8 @@
 import numpy as np
 
 def compute_mesh_external_surface(bmesh):
-    """mesh external surface"""
-    #Code source: https://github.com/rousseau/BrainGrowth/blob/master/geometry.py#L165
-
+    # mesh external surface
+    # Code source: https://github.com/rousseau/BrainGrowth/blob/master/geometry.py#L165
     print("Computing the external area of mesh (Cortex folded surface)...")
 
     coordinates = bmesh.coordinates()

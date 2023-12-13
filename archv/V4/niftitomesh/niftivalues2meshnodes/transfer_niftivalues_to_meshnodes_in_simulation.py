@@ -63,7 +63,7 @@ def transfer_nifti_values_to_mesh_nodes(MRI_nifti_path, mesh_coordinates, interp
     return values_loaded_to_mesh # MRI nifti values converted into a numpy array (size:mesh n_nodes)
 
 
-def load_SegmentationLabels_onto_mesh_nodes(Segmentation_nifti_file_path, meshFEniCS, interpolation_mode): 
+def load_MRIdata_onto_mesh_nodes(meshFEniCS, segmentation_labels_values_t): 
     """
     MRI Data:
     - FA
@@ -79,12 +79,12 @@ def load_SegmentationLabels_onto_mesh_nodes(Segmentation_nifti_file_path, meshFE
     mesh_coordinates = meshFEniCS.coordinates() # list of nodes coordinates
         
     # Revert X<>Y coordinates inversion performed by Netgen
-
+    """
     X = mesh_coordinates[:,0].copy()
     Y = mesh_coordinates[:,1].copy()
     mesh_coordinates[:,0] = Y
     mesh_coordinates[:,1] = X 
-
+    """
     
     # Convert mesh into vtk mesh
     ############################
@@ -105,12 +105,13 @@ def load_SegmentationLabels_onto_mesh_nodes(Segmentation_nifti_file_path, meshFE
     """
     
     # Load MRI nifti values onto mesh nodes (get n_nodes numpy array)
-    segmentation_labels_array = transfer_nifti_values_to_mesh_nodes(Segmentation_nifti_file_path, mesh_coordinates, interpolation_mode)
+    #segmentation_labels_array = transfer_nifti_values_to_mesh_nodes(Segmentation_nifti_file_path, mesh_coordinates, interpolation_mode)
+    #FA_values_array = transfer_nifti_values_to_mesh_nodes(normalized_FA_values, mesh_coordinates, interpolation_mode)
     
     # Build dictionnary from nodal arrays and load mesh
     ###################################################
     node_textures = {} 
-    node_textures['Segmentation'] = segmentation_labels_array
+    node_textures['Segmentation'] = segmentation_labels_values_t
     #node_textures['FA'] = normalized_FA_values_vertexIDX_t 
     
     for key in node_textures:
@@ -119,7 +120,7 @@ def load_SegmentationLabels_onto_mesh_nodes(Segmentation_nifti_file_path, meshFE
     return mesh # meshio mesh
 
 
-def load_FA_onto_mesh_nodes(meshFEniCS, FA_nifti_path, interpolation_mode): 
+def load_FAdata_onto_mesh_nodes(meshFEniCS, FA_nifti_path, interpolation_mode): 
     """
     MRI Data:
     - FA
@@ -135,12 +136,12 @@ def load_FA_onto_mesh_nodes(meshFEniCS, FA_nifti_path, interpolation_mode):
     mesh_coordinates = meshFEniCS.coordinates() # list of nodes coordinates
         
     # Revert X<>Y coordinates inversion performed by Netgen
-
+    """
     X = mesh_coordinates[:,0].copy()
     Y = mesh_coordinates[:,1].copy()
     mesh_coordinates[:,0] = Y
     mesh_coordinates[:,1] = X 
-
+    """
     
     # Convert mesh into vtk mesh
     ############################
@@ -161,6 +162,7 @@ def load_FA_onto_mesh_nodes(meshFEniCS, FA_nifti_path, interpolation_mode):
     """
     
     # Load MRI nifti values onto mesh nodes (get n_nodes numpy array)
+    #segmentation_labels_array = transfer_nifti_values_to_mesh_nodes(Segmentation_nifti_file_path, mesh_coordinates, interpolation_mode)
     FA_values_array = transfer_nifti_values_to_mesh_nodes(FA_nifti_path, mesh_coordinates, interpolation_mode)
     
     # Build dictionnary from nodal arrays and load mesh

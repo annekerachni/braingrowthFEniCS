@@ -3,7 +3,10 @@ import meshio
 import numpy as np
 import os 
 
-from FEM_biomechanical_model.preprocessing import compute_geometrical_characteristics, compute_center_of_gravity, compute_mesh_spacing
+import sys
+sys.path.append(".")
+
+from braingrowth.program.preprocessing import compute_geometrical_characteristics, compute_center_of_gravity, compute_mesh_spacing
 from metrics import brain_volume, brain_external_area
 
 def export_resultmesh_data(output_folder_path,
@@ -126,15 +129,23 @@ if __name__ == '__main__':
     
     parser.add_argument('-n', '--nsteps', help='nsteps goal', type=int, required=False, 
     default=100) 
+    
+    #parser.add_argument('-ct', '--totalcomputationaltime', help='total computational time at tmax (s.)', type=int, required=False, 
+    #default=288850) 
+    
+    #parser.add_argument('-o', '--outputfolderpath', help='Output folder path', type=str, required=False, 
+    #default="./simulations/series_of_nsteps/nsteps2000/analytics/") 
+
 
     args = parser.parse_args()
+    ##
 
     # folder path where to export the data linked to the result-mesh folded by the braingrowthFEniCS simulation 
-    output_folder_path = "./simulation_braingrowth/results/analytics/"
+    output_folder_path = "./simulations/references_Fg0/sphere_Ptot_alphaTAN3_nsteps100_newtonabs3rel2relax1_gmres_sor/analytics/"
 
     for numerical_time in args.numericaltimes:
         # path to the result-folded mesh in .vtk format
-        inputmesh_vtk_file_path = ".simulation_braingrowth/results/brainmesh_nsteps{}_time{}_volume.vtk".format(args.nsteps, str(numerical_time).split('.')[0] + "_" + str(numerical_time).split('.')[-1])
+        inputmesh_vtk_file_path = "./simulations/references_Fg0/sphere_Ptot_alphaTAN3_nsteps100_newtonabs3rel2relax1_gmres_sor/sphere_Ptot_alpha3_nsteps{}_newtonabs3rel2relax1_gmres_sor_time{}_volume.vtk".format(args.nsteps, str(numerical_time).split('.')[0] + "_" + str(numerical_time).split('.')[-1])
 
         # convergence of the simulation
         number_of_iterations = 0 #args.step
@@ -142,7 +153,7 @@ if __name__ == '__main__':
         total_computational_time = 0 #args.totalcomputationaltime
 
         # export .txt file name
-        exportTXTfile_name = "foldedspheremesh_nsteps{}_DATA_at_time{}.txt".format(args.nsteps, str(numerical_time).split('.')[0] + "_" + str(numerical_time).split('.')[-1])  
+        exportTXTfile_name = "foldedspheremesh_abs3rel2_nsteps{}_DATA_at_time{}.txt".format(args.nsteps, str(numerical_time).split('.')[0] + "_" + str(numerical_time).split('.')[-1])  
 
         # export data
         export_resultmesh_data(output_folder_path,

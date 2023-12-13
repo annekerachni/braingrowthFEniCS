@@ -10,7 +10,7 @@ from nibabel.affines import apply_affine
 import sys
 sys.path.append(".")
 
-from FEM_biomechanical_model import mappings
+from braingrowth.program import mappings
 
 """
 def get_vox2ras_tkr(image):

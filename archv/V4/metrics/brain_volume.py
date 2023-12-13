@@ -1,7 +1,5 @@
 import numpy as np
 
-"""Code source: https://github.com/rousseau/BrainGrowth/ """
-
 def det_dim_3(a):
         size = a.shape[0]
         b = np.zeros(size, dtype=np.float64)

@@ -18,6 +18,41 @@ sys.path.append(".")
 # 3. Place at final simulation time
 # 4. Save data in .vtk
 
+"""
+def xdmf_to_vtk(input_file_xdmf, output_file_vtk, time):
+
+    # read xdmf
+    # ---------
+    mesh = fenics.Mesh()
+
+    with fenics.XDMFFile(input_file_xdmf) as infile:
+        infile.read(mesh)
+
+    #from mpi4py import MPI
+    
+    
+    # choose mesh at specific time 
+    mvc = fenics.MeshValueCollection("size_t", mesh, time)
+
+    # convert to vtk
+    # --------------
+    # n_nodes = mesh.num_vertices()
+    coordinates = mesh.coordinates()
+
+    # n_tets = mesh.num_cells() 
+    tets = mesh.cells()
+
+    bmesh = fenics.BoundaryMesh(mesh, "exterior")
+    # n_faces = bmesh.num_faces() 
+    faces = bmesh.cells()
+
+    #meshio.write(output_file_xml, meshio.Mesh(points=coordinates, cells={'tetra': tets})) 
+    vtk_mesh = meshio.Mesh(points=coordinates, cells={'tetra': tets, 'triangle': faces})
+    meshio.write(output_file_vtk, vtk_mesh)
+
+    return vtk_mesh
+"""
+
 def tets_quality_computer(meshpath_vtk, quality_measure='aspect_ratio'): 
     """
     Options for cell quality measure:
@@ -119,7 +154,7 @@ if __name__ == '__main__':
 
     # Import the whole mesh in .vtk format
     # ------------------------------------
-    meshfile_vtk = './simulation_spheregrowth/results/growth_simulation.vtk'
+    meshfile_vtk = './simulation_results/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor_iteration76_100_volume.vtk'
 
     # Computing min, mean and max mesh elements aspect ratio
     # ------------------------------------------------------
@@ -128,3 +163,25 @@ if __name__ == '__main__':
     # Display surface elements aspect ratio
     # -------------------------------------
     #surface_tets_quality(quality_measure, qualitymeasure_pyvistagrid)
+
+
+    """
+    #meshfile_xdmf = '/home/latim/Avancement/3emeAnnee/braingrowthFEniCS_Ptot/results/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor_V2/displacement.xdmf'
+    meshfile_vtk = '/home/latim/Avancement/3emeAnnee/braingrowthFEniCS_Ptot/results/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor_V2/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor_iteration76_100.vtk'
+    #time = 0.5 # time at which mesh analysis is wished
+
+    #vtk_mesh = xdmf_to_vtk(meshfile_xdmf, meshfile_vtk, time)
+
+    # Computing min, mean and max mesh elements aspect ratio
+    # ------------------------------------------------------
+    quality_measure, qualitymeasure_pyvistagrid, mesh_surf_edges = tets_quality_computer(meshfile_vtk, quality_measure='aspect_ratio')
+
+    # Display surface elements aspect ratio
+    # -------------------------------------
+    surface_tets_quality(quality_measure, qualitymeasure_pyvistagrid)
+
+    # Analyse elements with "abnormal" aspect ratio
+    # ---------------------------------------------
+    #percent_filtered_tets_quality(quality_measure, qual)
+    #interval_filtered_tets_quality(quality_measure, qualitymeasure_pyvistagrid, mesh_surf_edges)
+    """

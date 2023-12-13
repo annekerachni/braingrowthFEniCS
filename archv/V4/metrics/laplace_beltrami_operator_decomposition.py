@@ -1,4 +1,4 @@
-"""credits: Saad Jbabdi --> https://colab.research.google.com/drive/1MrkHAenYXn7EXrwKcwVyMT6KbcjrXHMm#scrollTo=bqw4dbI_C10-"""
+# credits: Saad Jbabdi --> https://colab.research.google.com/drive/1MrkHAenYXn7EXrwKcwVyMT6KbcjrXHMm#scrollTo=bqw4dbI_C10-
 
 import numpy as np
 import nibabel as nib
@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import slam.io as sio
 import slam.curvature as scurv
 import slamviz.plot as splt
+
+
 
 ## helpers 
 ##########
@@ -103,6 +105,10 @@ def form_SHmat(xyz, max_order): # xyz: all vertices coordinates
 
     return np.asarray(mat).T # --> returns "complex scalar or ndarray the harmonic sampled at theta and phi" Ym,l.
 
+
+
+
+
 ##########################################
 ### smooth & folded sphere to analyze ####
 ##########################################
@@ -124,6 +130,7 @@ def analyze_mesh_folding_pattern(Geometries, num_modes, visualization_mode):
         # get surface
         v, t   = read_mesh(surf_path)
         Surfaces[surf_geom] = [v, t] # v: vertices coordinates; t: triangles 3 indices
+
 
     ##################
     ### mean_curv ####
@@ -351,6 +358,7 @@ def analyze_mesh_folding_pattern(Geometries, num_modes, visualization_mode):
         fig_comparative.show()
 
         """ 
+        # does not work: np.corrcoef works for n_nodes x n_modes arrays comparison
         # Correlation matrix between mean_curv raw signal and recomposed signal from LBO decomposition modes (cf. Saad Jbabdi)
         n   = mean_curv.shape[1]
         num_modes = emodes.shape[1]
@@ -412,6 +420,18 @@ if __name__ == '__main__':
     
     from utils.converters import convert_stl_to_gii
 
+    """
+    # input file (result from the braingrowthFEnICS simulation)
+    folded_mesh_vtk = './simulations/25sept/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor/sphere_Ptot_alpha4_nsteps100_newtonabs3rel2relax1_gmres_sor_iteration76_100_volume.vtk'
+
+    #convert .vtk folded mesh into .stl format
+    from utils.converters import convert_meshformats_to_stl
+    folded_mesh_stl = folded_mesh_vtk.split('.vtk')[0] + ".stl"
+    convert_meshformats_to_stl.vtk_to_stl(folded_mesh_vtk, folded_mesh_stl)
+    """
+    # --> FIND A WAY TO GET A STL WITH NO FACES INVERTED!
+
+    """
     # Convert the folded mesh at time of interest from .xdmf into .stl:
     # -----------------------------------------------------------------
     # 1. Paraview: 
@@ -424,13 +444,15 @@ if __name__ == '__main__':
     # Eventually Filter / "Invert Faces Orientation"
     # "Export Mesh As..." stl. (Untick "Binary encoding")
     
+    """
+    
     parser = argparse.ArgumentParser(description='Compute principal wavelength of the folded sphere mesh (by braingrowthFEniCS) using Laplace-Beltrami operator decomposition')
 
     #parser.add_argument('-fs', '--foldedspheremeshpath', help='Path to the folded mesh geometry (.stl) on which to compute curvature', type=str, required=False, 
     #default='./simulations/series_of_nsteps/nsteps100/sphere_Ptot_alpha3_nsteps2000_newtonabs8rel7relax1_gmres_sor_time0_4.stl') 
     
     parser.add_argument('-is', '--initialspheresurface', help='Path to the initial smooth mesh geometry (.stl) corresponding to mesh at t=0, on which to compute LBO eigenmodes basis', type=str, required=False, 
-    default='./data/surface_meshes/sphere_T0.stl') 
+    default='./data/surface_meshes/initial_sphere005refinedcoef5_V2.stl') 
     
     parser.add_argument('-s', '--step', help='step number of the folded sphere mesh', type=int, required=False, 
     default=100) 
@@ -444,10 +466,24 @@ if __name__ == '__main__':
     parser.add_argument('-nm', '--numberofeigenmodes', help='Number of eigen modes on which to decompose the curvature of the folded sphere mesh', type=int, required=False, 
     default=1500) 
     
+    #parser.add_argument('-o', '--outputfolderpath', help='Path to the output folder where to save .txt file on wavelengths and power spectrum', type=str, required=False, 
+    #default='./simulations/series_of_nsteps/nsteps2000/analytics/')  
+    
+    #parser.add_argument('-tf', '--txtfilename', help='Name of the text file to save', type=str, required=False, 
+    #default='foldedsphere_curvature_LBOanalysis_nsteps2000_time0_4.txt') 
+    
+    """ 
+    parser.add_argument('-it', '--step', help='step reached', type=int, required=False, 
+                        default=1700)
+    
+    parser.add_argument('-n', '--nsteps', help='nsteps goal', type=int, required=False, 
+                        default=2000)
+    """
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')
 
     args = parser.parse_args()
+    ##
     
     
     # Number of modes used to decompose the folded mesh curvature on
@@ -472,7 +508,7 @@ if __name__ == '__main__':
     for numericaltime in args.numericaltimes:
         # convert folded mesh from .stl to .gii format 
         # --------------------------------------------
-        folded_mesh_stl = './simulation_spheregrowth/results/growth_simulation_nsteps{}_time{}.stl'.format(args.step, str(numericaltime).split('.')[0] + "_" + str(numericaltime).split('.')[-1])
+        folded_mesh_stl = './simulations/references_Fg0/sphere_Ptot_alphaTAN3_nsteps100_newtonabs3rel2relax1_gmres_sor/sphere_Ptot_alpha3_nsteps{}_newtonabs3rel2relax1_gmres_sor_time{}.stl'.format(args.step, str(numericaltime).split('.')[0] + "_" + str(numericaltime).split('.')[-1])
         
         triangle_mesh, faces, vertices = convert_stl_to_gii.read_stl_mesh(folded_mesh_stl)
 
@@ -495,8 +531,8 @@ if __name__ == '__main__':
         
         # export .txt data
         # ----------------        
-        output_folder_path = './simulation_spheregrowth/results/analytics/'
-        filetext_name = 'foldedsphere_nsteps{}_curvature_LBOanalysis_time{}.txt'.format(args.step, str(numericaltime).split('.')[0] + "_" + str(numericaltime).split('.')[-1])
+        output_folder_path = './simulations/references_Fg0/sphere_Ptot_alphaTAN3_nsteps100_newtonabs3rel2relax1_gmres_sor/analytics/'
+        filetext_name = 'foldedsphere_abs3rel2_nsteps{}_curvature_LBOanalysis_time{}.txt'.format(args.step, str(numericaltime).split('.')[0] + "_" + str(numericaltime).split('.')[-1])
         filetext_path = os.path.join(output_folder_path, filetext_name)
         
         try:
@@ -511,11 +547,14 @@ if __name__ == '__main__':
         filetxt.write('*******************************************************\n')
         
         filetxt.write('>> numerical time: {}\n'.format(numericaltime))
+        #filetxt.write('>> current step: {}\n'.format(args.step))
+        #filetxt.write('>> nsteps to reach: {}\n'.format(args.nsteps))
         filetxt.write('\n')
 
         filetxt.write('>> num_modes :{}\n'.format(num_modes))
         filetxt.write('\n')
         
+        #filetxt.write('>> wavelength (1499) : {} \n'.format(wavelenghts_array))
         filetxt.write('>> wavelength mode1 = {} mm \n'.format(wavelenghts_array_without_mode0[0]))
         filetxt.write('>> wavelength mode2 = {} mm \n'.format(wavelenghts_array_without_mode0[1]))
         filetxt.write('>> wavelength mode2 = {} mm \n'.format(wavelenghts_array_without_mode0[2]))
@@ -523,6 +562,7 @@ if __name__ == '__main__':
         filetxt.write('>> wavelength last mode = {} mm \n'.format(wavelenghts_array_without_mode0[-1]))
         filetxt.write('\n')
         
+        #filetxt.write('>> power spectrum values (1499) : {} \n'.format(power_spectrum_array))
         filetxt.write('>> power spectrum value mode1 = {} mm \n'.format(power_spectrum_array_without_mode0[0]))
         filetxt.write('>> power spectrum value mode2 = {} mm \n'.format(power_spectrum_array_without_mode0[1]))
         filetxt.write('>> power spectrum value mode3 = {} mm \n'.format(power_spectrum_array_without_mode0[2]))

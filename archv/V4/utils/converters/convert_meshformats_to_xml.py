@@ -1,8 +1,10 @@
 """
-code source: 
+python convert_mesh_to_xml.py -i '/home/latim/FEniCS/GitHub/data_test/dhcpRAS_iso_fine.mesh' -o '/home/latim/FEniCS/GitHub/data_test/dhcpRAS_iso_fine.xml'
+"""
+
+# code source: 
 # original BrainGrowth: https://github.com/rousseau/BrainGrowth/blob/master/geometry.py
 # https://fenicsproject.discourse.group/t/transitioning-from-mesh-xml-to-mesh-xdmf-from-dolfin-convert-to-meshio/412/86
-"""
 
 import meshio
 from numba.typed import List
@@ -41,6 +43,7 @@ def msh_to_xml(input_file_msh, output_file_xml):
 
 
 def stl_to_xml_2D(input_file_stl, output_file_xml): 
+
     """
     Args: 2D mesh in STL format (stl)
     Returns: mesh in XML format, explotable by FEniCS (FEniCS reads XML mesh files with tetrahedrons cells). 
@@ -127,14 +130,16 @@ def mesh_to_xml(output_file_xml, coordinates, tets):
 
 
 import argparse
-if __name__ == '__main__':  
-    parser = argparse.ArgumentParser(description='Convert mesh formats to XML (FEniCS format)')
+if __name__ == '__main__':
+    """python3 -i convert_meshformats_to_xml.py -i './data/dhcp/dhcp_atlas/dhcp21GW_29296faces_107908tets.mesh' -o './data/dhcp/dhcp_atlas/dhcp21GW_29296faces_107908tets.xml' """
+  
+    parser = argparse.ArgumentParser(description='Convert Mesh to XML Fenics')
     
     parser.add_argument('-i', '--input', help='Input mesh (.vtk, .msh, .mesh) path', type=str, required=False, 
-                        default='./data/brainmesh.mesh' ) 
+                        default='./data/dhcp/dhcp_atlas/21GW/dhcp21GW_29296faces_107908tets.mesh' ) 
     
     parser.add_argument('-o', '--output', help='Output mesh path (.xml)', type=str, required=False, 
-                        default='./data/brainmesh.xml') 
+                        default='./data/dhcp/dhcp_atlas/21GW/dhcp21GW_29296faces_107908tets.xml') 
 
     args = parser.parse_args()
 

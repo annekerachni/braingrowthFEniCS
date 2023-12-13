@@ -1,8 +1,6 @@
-"""
-code source: 
+# code source: 
 # original BrainGrowth: https://github.com/rousseau/BrainGrowth/blob/master/geometry.py
 # https://fenicsproject.discourse.group/t/transitioning-from-mesh-xml-to-mesh-xdmf-from-dolfin-convert-to-meshio/412/86
-"""
 
 import meshio
 from numba.typed import List
@@ -186,6 +184,21 @@ def msh_to_stl(input_file_path, output_file_stl):
     triangle_mesh = meshio.Mesh(points=msh.points, cells={"triangle": triangle_cells})
     meshio.write(output_file_stl, triangle_mesh)
 
+    """ 
+    mesh = fenics.Mesh(input_file_path) # FEniCS object
+    tets = mesh.cells()
+    n_faces_Volume = mesh.num_facets()
+    tets_coords = mesh.coordinates()
+
+    bmesh = fenics.BoundaryMesh(mesh, "exterior") # FEniCS object
+    n_faces_Surface = bmesh.num_faces()
+    n_nodes_Surface = bmesh.num_vertices()
+    faces = bmesh.cells()
+    faces_coords = bmesh.coordinates()
+
+    meshio.write(output_file_stl, meshio.Mesh(points=faces_coords, cells=[("triangle", faces)]))  
+    """
+
     return 
 
 
@@ -200,14 +213,14 @@ def mesh_to_stl(output_file_stl, faces_coords, faces):
 import argparse
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Convert mesh formats to STL')
+    parser = argparse.ArgumentParser(description='Convert Mesh to XML Fenics')
 
     parser.add_argument('-i', '--input', help='Input mesh (.msh, .vtk, .mesh, .xml) path', type=str, required=False, 
-                        default='./data/sphere.xml' ) 
+                        default='./data/sphere_18Ktets.xml' ) # './data/dhcp/mesh/dhcpWholefull/dhcp21Whole_veryfine_3M.mesh'; './data/ellipsoid_284K.mesh'
     
     parser.add_argument('-o', '--output', help='Output mesh path (.stl,)', type=str, required=False, 
-                        default='./data/sphere.stl') 
-                        
+                        default='./data/sphere_18Ktets.stl') # './data/dhcp/mesh/dhcpWholefull/dhcp21Whole_veryfine_3M.xml'; './data/ellipsoid_284K.xml'
+
     args = parser.parse_args()
 
     input_file_path = args.input

@@ -67,15 +67,26 @@ def show_slices(slices): # code source: https://nipy.org/nibabel/coordinate_syst
 import argparse
 import json
 if __name__ == '__main__':
+    
+    """
+    python3 -i mask_nifti_with_segmentation_parcels.py 
+            -i { "nifti": '/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t2-t21.00.nii.gz',
+                 "segmentation": '/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/parcellations/tissue-t21.00_dhcp-19.nii.gz'}
+            -hw 'whole'
+            -par '{ "left": {"cortex": 3., "wm": 5., "caudate_putamen_globuspallidus": 14., "thalamus": 16., "ventricles": 7.},
+                    "right": {"cortex": 4., "wm": 6., "caudate_putamen_globuspallidus": 15., "thalamus": 17., "ventricles": 8.} }'
+            - o './data/21GW/dhcp21GW_masked_keeping_Cortex_WM_CaudatePutamenGlobuspallidus_Thalamus_Ventricules.nii.gz'
+            - d True
+    """
 
     parser = argparse.ArgumentParser(description='Mask brain MRI nifti with selected parcels from provided segmentation')
     
     parser.add_argument('-i', '--inputdata', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=False, 
                         default={ 
                                  
-                                 "nifti":'./fetal_database/structural/t2-t36.00.nii.gz',
+                                 "nifti":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t2-t36.00.nii.gz',
                                  
-                                 "segmentation":'./fetal_database/parcellations/tissue-t36.00_dhcp-19.nii.gz'
+                                 "segmentation":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/parcellations/tissue-t36.00_dhcp-19.nii.gz'
                                  
                                  } )
     
@@ -107,7 +118,7 @@ if __name__ == '__main__':
                                 }) # e.g. dhcp segmentation parcels (See data from https://gin.g-node.org/kcl_cdb/fetal_brain_mri_atlas/src/master/parcellations)
     
     parser.add_argument('-o', '--outputmaskednifti', help='Path to masked nifti (.nii.gz)', type=str, required=False, 
-                        default='./data/dhcp/dhcp_atlas/36GW/dhcp36GW_masked.nii.gz')
+                        default='./data/dhcp/dhcp_atlas/36GW/dhcp36GW_masked_keeping_Cortex_WM_CaudatePutamenGlobuspallidus_Thalamus_Ventricules.nii.gz')
     
     parser.add_argument('-d', '--displaymode', help='Display nifti before and after masking', type=bool, required=False, 
                         default=True)

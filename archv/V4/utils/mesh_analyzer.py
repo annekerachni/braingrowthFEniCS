@@ -7,7 +7,7 @@ import os, sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from FEM_biomechanical_model import preprocessing
+from braingrowth.program import preprocessing
 
 if __name__ == '__main__':
     # './data/gmsh/ellipsoid_1M27Ktets/ellipsoid_algoDelaunay1_tets002.xml'
@@ -15,7 +15,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Visualize .xml input mesh and Compute characteristics')
 
     parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=False, 
-                        default='./data/brainmesh.xml')
+                        default='./data/fetal_dhcp_atlas/21GW/dhcp21GW_17Ktets.xml')
+                        # './data/fetal_dhcp_atlas/21GW/dhcp21GW_17Ktets.xml' 
+                        # './data/fetal_dhcp_atlas/21GW/dhcp21GW_708Ktets.xml' 
+                        # './data/fetal_dhcp_atlas/21GW/dhcp21GW_728Ktets.xml' 
 
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=True)
 

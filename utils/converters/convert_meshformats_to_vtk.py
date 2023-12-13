@@ -1,6 +1,8 @@
-# code source: 
+"""
+code source: 
 # original BrainGrowth: https://github.com/rousseau/BrainGrowth/blob/master/geometry.py
 # https://fenicsproject.discourse.group/t/transitioning-from-mesh-xml-to-mesh-xdmf-from-dolfin-convert-to-meshio/412/86
+"""
 
 import meshio
 from numba.typed import List
@@ -12,28 +14,15 @@ def xml_to_vtk(input_file_xml, output_file_vtk):
     """
     From FEniCS mesh formats, get .vtk format
     """
-
     mesh = fenics.Mesh(input_file_xml) # FEnicS object
-
-    # n_nodes = mesh.num_vertices()
     coordinates = mesh.coordinates()
-
-    # n_tets = mesh.num_cells() 
     tets = mesh.cells()
-
     bmesh = fenics.BoundaryMesh(mesh, "exterior")
-    # n_faces = bmesh.num_faces() 
     faces = bmesh.cells()
-    
-
-    #meshio.write(output_file_xml, meshio.Mesh(points=coordinates, cells={'tetra': tets})) 
-    vtk_mesh = meshio.Mesh(points=coordinates, cells={'tetra': tets, 'triangle': faces})
+    vtk_mesh = meshio.Mesh(points=coordinates, cells={'tetra': tets})
     meshio.write(output_file_vtk, vtk_mesh)
 
     return 
-
-
-
 
 def msh_to_vtk(input_file_msh, output_file_vtk): 
     """
@@ -44,7 +33,6 @@ def msh_to_vtk(input_file_msh, output_file_vtk):
     meshio.write(output_file_vtk, meshio.Mesh(points = mesh.points, cells = {'tetra': mesh.cells_dict['tetra']})) 
 
     return 
-
 
 def load_mesh(input_file_mesh):
     """
@@ -132,7 +120,6 @@ def msh_to_vtk(input_file_path, output_file_vtk):
 
 def mesh_to_vtk(output_file_stl, faces_coords, tets): 
     #can be also use as 'mesh_to_vtk': in that case, use output_file_path in .vtk 
-
     meshio.write(output_file_stl, meshio.Mesh(points=faces_coords, cells=[("tetra", tets)])) 
 
     return 
@@ -140,9 +127,9 @@ def mesh_to_vtk(output_file_stl, faces_coords, tets):
 
 import argparse
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Convert Mesh to XML Fenics')
-    parser.add_argument('-i', '--input', help='Input mesh (.msh, .mesh, .xml) path', type=str, required=False, default='./data/dhcp21_145K_refinedcoef20.xml' ) # './data/dhcp/mesh/dhcpWholefull/dhcp21Whole_veryfine_3M.mesh'; './data/ellipsoid_284K.mesh'
-    parser.add_argument('-o', '--output', help='Output mesh path (.vtk)', type=str, required=False, default='./data/dhcp21GW.vtk') # './data/dhcp/mesh/dhcpWholefull/dhcp21Whole_veryfine_3M.xml'; './data/ellipsoid_284K.xml'
+    parser = argparse.ArgumentParser(description='Convert mesh formats to VTK')
+    parser.add_argument('-i', '--input', help='Input mesh (.msh, .mesh, .xml) path', type=str, required=False, default='./data/brainmesh.xml' )
+    parser.add_argument('-o', '--output', help='Output mesh path (.vtk)', type=str, required=False, default='./data/brainmesh.vtk') 
 
     args = parser.parse_args()
 
