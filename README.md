@@ -19,6 +19,8 @@
 - growth kinetics: linear and homogeneous
 - tangential growth tensor
 
+![input_parameters](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/a78adb94-2124-4d9e-999b-ab49c2702268)
+
 #### Dicretization of the problem + FEniCS solver parameters:
 - Discretization of the spatial domain with Finite Element Method (Lagrange, degree 1)
 - Solver 
