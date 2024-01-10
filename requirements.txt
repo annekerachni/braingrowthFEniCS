@@ -6,3 +6,5 @@ vedo==2022.3.0
 matplotlib==3.5.3
 numba==0.56.4
 sympy==1.12
+tqdm==4.65.0
+numpy==1.23.1
