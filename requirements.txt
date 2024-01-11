@@ -8,3 +8,9 @@ numba==0.56.4
 sympy==1.12
 tqdm==4.65.0
 numpy==1.23.1
+pyvista==0.37.0
+nibabel==5.0.1
+fslpy==3.13.2
+slam
+slamviz
+
