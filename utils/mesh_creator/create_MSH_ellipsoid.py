@@ -1,8 +1,6 @@
 import meshio
 import gmsh
 from math import *
-from fenics import *
-import vedo.dolfin
 
 # gmsh (ellipsoid 3D --> .msh format) 
 # https://gitlab.onelab.info/gmsh/gmsh/-/blob/master/examples/api/boolean.py
