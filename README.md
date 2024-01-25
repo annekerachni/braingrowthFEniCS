@@ -29,10 +29,37 @@
 - Temporal integration method : generalized-alpha method
 
 ## Simulation 
+#### Input parameters:
+- Brain geometry:
+  - *H0*: cortical thickness at t0 [mm]
+ 
+- Brain material:
+  - *K*: bulk modulus of the brain material [kPa]
+  - *muCortex*, *muCore*: shear modulus of Cortex, resp. inner layers of the brain [kPa]
+
+- Motion:
+  - *rho*: mass density of the brain material (supposed constant) [mm/kg⁻¹]
+  - *damping_coef*:  ratio for elastic wave damping, standing for energy dissipation [-] 
+ 
+- Growth:
+  - *alphaTAN*: tangential growth coefficient [-]
+  - *alphaRAD*: radial growth coefficient [-]
+  - *grTAN*: weigth for tangential growth [-]
+  - *grRAD*: weigth for radial growth [-]
+
+- time integration scheme for dynamical PDE: 
+  - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: alphaM=0.2,alphaF=0.4; Newmark-β method: alphaM=0.,alphaF=0.)
+
+- Simulation:
+  - *T0*: initial numerical time, when mesh is smooth.
+  - *Tmax*: final numerical time 
+  - *Nsteps*: Number of steps 
+ 
+
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: `conda create -n fenicsvenv -c conda-forge fenics`
 - Simulations can be launched on sphere geometries via `simulation_spheregrowth` or on brain ones via `simulation_braingrowth`
-- e.g. launch command: `python3 -i ./simulation_braingrowth/main.py`
+- e.g. launch command: `python main_sphere_growth.py -i sphere.xdmf  -p ‘{"H0": 0.03, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 0.5, "alphaTAN": 3.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 1.0, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}’ -o results/`
 
 ## References
 - T. Tallinen et al., On the growth and form of cortical convolutions. Nature Physics, 12(6):588–593, 2016 
