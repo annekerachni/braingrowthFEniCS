@@ -56,62 +56,60 @@ import argparse
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert mesh formats to XDMF and Refine mesh near by surface boundary')
 
-    parser.add_argument('-i', '--inputmesh', help='Input mesh (.msh) path', type=str, required=False, 
+    parser.add_argument('-i', '--inputmesh', help='Input mesh (.msh) path', type=str, required=True, 
                         default='./data/sphere.msh') 
     
-    parser.add_argument('-o', '--outputmesh', help='Output mesh path (.xdmf)', type=str, required=False, 
+    parser.add_argument('-o', '--outputmesh', help='Output mesh path (.xdmf)', type=str, required=True, 
                         default='./data/sphere.xdmf') 
 
     parser.add_argument('-rfc', '--refinementwidthcoef', help='refinement width coef', type=int, required=False, 
-                        default=10)  
+                        default=0)  
     # if 0: no refinement 
     # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
-
-    parser.add_argument('-or', '--outputrefinedmesh', help='Output refined mesh path (.xdmf)', type=str, required=False, 
-                        default='./data/sphere_refined.xdmf') 
 
     args = parser.parse_args()
 
     msh_input_file_path = args.inputmesh
     xdmf_output_file_path = args.outputmesh
     refinement_width_coef = args.refinementwidthcoef 
-    refined_xdmf_output_file_path = args.outputrefinedmesh
-
+    
     # convert mesh from .msh to .xdmf
     # -------------------------------
     mesh = meshio.read(msh_input_file_path) 
     msh_to_xdmf(msh_input_file_path, xdmf_output_file_path)
 
-    # refine .xdmf mesh
-    # -----------------
-    # read FEniCS mesh 
-    FEniCSmesh_to_refine = fenics.Mesh()
-    with fenics.XDMFFile(xdmf_output_file_path) as infile:
-        infile.read(FEniCSmesh_to_refine)
+    if refinementwidthcoef > 0:
         
-    vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
-
-    # min mesh spacing
-    min_mesh_spacing = compute_min_mesh_spacing(FEniCSmesh_to_refine)
-
-    # get required args for refinement function
-    brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
-
-    brainsurface_bmesh_bbtree = fenics.BoundingBoxTree()
-    brainsurface_bmesh_bbtree.build(brainsurface_bmesh)  
-
-    # refined mesh
-    refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
-                                                              brainsurface_bmesh_bbtree, 
-                                                              min_mesh_spacing, 
-                                                              refinement_width_coef)
+        # refine .xdmf mesh
+        # -----------------        
+        # read FEniCS mesh 
+        FEniCSmesh_to_refine = fenics.Mesh()
+        with fenics.XDMFFile(xdmf_output_file_path) as infile:
+            infile.read(FEniCSmesh_to_refine)
+            
+        vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
     
-    # generate XDMF refined mesh
-    # --------------------------
-    with fenics.XDMFFile(MPI.COMM_WORLD, refined_xdmf_output_file_path) as xdmf:
-        xdmf.write(refined_FEniCSmesh)
-
-    vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
+        # min mesh spacing
+        min_mesh_spacing = compute_min_mesh_spacing(FEniCSmesh_to_refine)
+    
+        # get required args for refinement function
+        brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
+    
+        brainsurface_bmesh_bbtree = fenics.BoundingBoxTree()
+        brainsurface_bmesh_bbtree.build(brainsurface_bmesh)  
+    
+        # refined mesh
+        refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
+                                                                  brainsurface_bmesh_bbtree, 
+                                                                  min_mesh_spacing, 
+                                                                  refinement_width_coef)
+        
+        # generate XDMF refined mesh
+        # --------------------------
+        with fenics.XDMFFile(MPI.COMM_WORLD, xdmf_output_file_path) as xdmf:
+            xdmf.write(refined_FEniCSmesh)
+    
+        vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
 
 
     
