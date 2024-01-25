@@ -69,8 +69,18 @@ if __name__ == '__main__':
     # ----
     # mesh & boundary mesh
     print("\nimporting mesh...")
+
     inputmesh_path = args.input
-    mesh = fenics.Mesh(inputmesh_path)
+    inputmesh_format = inputmesh_path.split('.')[-1]
+
+    if inputmesh_format == "xml":
+        mesh = fenics.Mesh(inputmesh_path)
+
+    elif inputmesh_format == "xdmf":
+        mesh = fenics.Mesh()
+        with fenics.XDMFFile(inputmesh_path) as infile:
+            infile.read(mesh)
+            
     bmesh = fenics.BoundaryMesh(mesh, "exterior") # bmesh at t=0.0 (cortex envelop)
 
     if args.visualization == True:
