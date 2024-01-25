@@ -1,6 +1,5 @@
 import meshio
 import gmsh
-from math import *
 
 # gmsh (ellipsoid 3D --> .msh format) 
 # https://gitlab.onelab.info/gmsh/gmsh/-/blob/master/examples/api/boolean.py
