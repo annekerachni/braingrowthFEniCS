@@ -78,7 +78,7 @@ if __name__ == '__main__':
     mesh = meshio.read(msh_input_file_path) 
     msh_to_xdmf(msh_input_file_path, xdmf_output_file_path)
 
-    if refinementwidthcoef > 0:
+    if refinement_width_coef > 0:
         
         # refine .xdmf mesh
         # -----------------        
