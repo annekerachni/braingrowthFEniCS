@@ -82,117 +82,71 @@ if __name__ == '__main__':
     # REFINE MESH NEAR BY BOUNDARY
     # ----------------------------
     import argparse
-    parser = argparse.ArgumentParser(description='Refine the .xml input mesh near by the cortical surface')
+    from mpi4py import MPI
+    import sys, os
+    
+    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'FEM_biomechanical_model'))
+    from FEM_biomechanical_model import preprocessing
+    
+    parser = argparse.ArgumentParser(description='Refine mesh near by surface boundary')
 
-    parser.add_argument('-i', '--meshtorefine', help='Path to the mesh to refine (.xml format)', type=str, required=False, 
-    default='./data/brainmesh.xml')
+    parser.add_argument('-i', '--inputmesh', help='Path to mesh to refine (.xml, .xdmf)', type=str, required=True, 
+                        default='./data/sphere.xdmf') 
+    
+    #parser.add_argument('-o', '--outputmesh', help='Path to output folder', type=str, required=True, 
+    #                    default='./data/') 
 
-    parser.add_argument('-c', '--refinementwidthcoef', help='Refinement coefficient (node for which distance to surface < refinement coef * min mesh spacing, will be in the refinement zone) e.g. 5; 10: 20', type=int, required=False, 
-    default=20)
-
-    parser.add_argument('-o', '--refinedmesh', help='Path where to write the refined mesh (.xml format)', type=str, required=False, 
-    default='./data/brainmesh_refined20.xml')
-
-    parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, 
-    default=True)
-
-    parser.add_argument('-l', '--longitudinalaxis', help='Longitudinal axis of the brain mesh. e.g.: 0 for x; 1 for y; 2 for z', type=int, required=False, 
-    default=0) # longitudinal axis: y
-
+    parser.add_argument('-rfc', '--refinementwidthcoef', help='refinement width coef (integer > 0)', type=int, required=False, 
+                        default=5)  
+    # if 0: no refinement 
+    # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
 
     args = parser.parse_args()
 
-    # input mesh to refine
-    mesh_to_refine_path_XML = args.meshtorefine
-    mesh_to_refine = fenics.Mesh(mesh_to_refine_path_XML) # mesh_to_refine = fenics.Mesh(mesh_to_refine_path_XML)
-    bmesh = fenics.BoundaryMesh(mesh_to_refine, "exterior") 
-
-    characteristics = preprocessing.compute_geometrical_characteristics(mesh_to_refine, bmesh)
-    COG = preprocessing.compute_center_of_gravity(characteristics)
-
-    #vedo.dolfin.plot(mesh_to_refine, wireframe=False, text='mesh mesh to refine', style='paraview', axes=4).close()
-    class Halfbrain(fenics.SubDomain):
-            def inside(self, x, on_boundary):
-                return x[args.longitudinalaxis] > COG[0] # TO MODIFY: x[0] or x[1] to visualize the correct orientation of the cut
-            
-    halfbrain = Halfbrain()
+    input_file_path = args.inputmesh
+    inputmesh_format = input_file_path.split('.')[-1]
     
-    regions = fenics.MeshFunction('size_t', mesh_to_refine, mesh_to_refine.topology().dim())
-    regions.set_all(0)
-    halfbrain.mark(regions, 1)
-
-    submesh = fenics.SubMesh(mesh_to_refine, regions, 1)
-
-    # define camera position to visualize the cut half brain mesh
-    X = mesh_to_refine.coordinates()[:,0]
-    Y = mesh_to_refine.coordinates()[:,1]
-    Z = mesh_to_refine.coordinates()[:,2]
-    min_negative_half_brain_distance = min( min(np.min(X), np.min(Y)), np.min(Z))
-
-    if args.longitudinalaxis == 0:
-        cameraposition = (COG[0] - 20*int(min_negative_half_brain_distance), COG[1], COG[2])
-    elif args.longitudinalaxis == 1:
-        cameraposition = (COG[0], COG[1] - 20*int(min_negative_half_brain_distance), COG[2])
-    else:
-        cameraposition = (COG[0], COG[1], COG[2] - 20*int(min_negative_half_brain_distance))
+    output_file_path = os.path.dirname(input_file_path)
+    
+    refinement_width_coef = args.refinementwidthcoef 
+    
             
+    # read FEniCS mesh 
+    if inputmesh_format == "xml":
+        FEniCSmesh_to_refine = fenics.Mesh(input_file_path)
+    
+    elif inputmesh_format == 'xdmf':
+        FEniCSmesh_to_refine = fenics.Mesh()
+        with fenics.XDMFFile(input_file_path) as infile:
+            infile.read(FEniCSmesh_to_refine)
+    
+    vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
 
-    # plot
-    vedo.dolfin.plot(submesh,
-                    #mode='cut mesh',
-                    #style='paraview',
-                    camera={'pos':cameraposition}, # TO MODIFY
-                    #azimuth = 90, # rotation of the scene
-                    interactive=True).close()
+    # min mesh spacing
+    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_min_mesh_spacing(FEniCSmesh_to_refine)
 
     # get required args for refinement function
-    brainsurface_bmesh = fenics.BoundaryMesh(mesh_to_refine, "exterior") 
-    
-    # characteristics of the initial mesh
-    characteristics0 = preprocessing.compute_geometrical_characteristics(mesh_to_refine, brainsurface_bmesh) 
-    min_mesh_spacing0, average_mesh_spacing0, max_mesh_spacing0 = preprocessing.compute_mesh_spacing(mesh_to_refine)
-    print("\ninitial mesh:\nn_nodes : {}\nn_tets : {}\nn_faces : {}\nmean mesh spacing : {}\n".format(characteristics0["n_nodes"], 
-                                                                                                  characteristics0["n_tets"],
-                                                                                                  characteristics0["n_faces_Surface"],
-                                                                                                  average_mesh_spacing0))
+    brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
 
-    # choose refinement coef
-    refinement_width_coef = args.refinementwidthcoef # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
-
-    # refined mesh
-    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(mesh_to_refine)
     brainsurface_bmesh_bbtree = fenics.BoundingBoxTree()
     brainsurface_bmesh_bbtree.build(brainsurface_bmesh)  
-    
-    refined_mesh = refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtree, min_mesh_spacing, refinement_width_coef)
 
-    # generate XML mesh
-    # -----------------
-    fenics.File(args.refinedmesh) << refined_mesh
+    # refined mesh
+    refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
+                                                                brainsurface_bmesh_bbtree, 
+                                                                min_mesh_spacing, 
+                                                                refinement_width_coef)
     
-    #vedo.dolfin.plot(refined_mesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
+    # generate XDMF refined mesh
+    # --------------------------
+    if inputmesh_format == "xml":
+        output_path = os.path.join(input_file_path.split('.')[0], '_refined.xml')
+        fenics.File(output_path) << refined_FEniCSmesh
+        
+    elif inputmesh_format == 'xdmf':
+        output_path = os.path.join(input_file_path.split('.')[0], '_refined.xdmf')
+        with fenics.XDMFFile(MPI.COMM_WORLD, output_path) as xdmf:
+            xdmf.write(refined_FEniCSmesh)
 
-    halfbrain2 = Halfbrain()
-    
-    regions2 = fenics.MeshFunction('size_t', refined_mesh, refined_mesh.topology().dim())
-    regions2.set_all(0)
-    halfbrain2.mark(regions2, 1)
+    vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
 
-    submesh2 = fenics.SubMesh(refined_mesh, regions2, 1)
-
-    vedo.dolfin.plot(submesh2,
-                    #mode='cut mesh',
-                    #style='paraview',
-                    camera={'pos':cameraposition}, # TO MODIFY
-                    #azimuth = 90, # rotation of the scene
-                    interactive=True).clear() 
-    
-    # characteristics of the refined mesh
-    brainsurface_bmesh_refined = fenics.BoundaryMesh(refined_mesh, "exterior") 
-    characteristics = preprocessing.compute_geometrical_characteristics(refined_mesh, brainsurface_bmesh_refined) 
-    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(refined_mesh)
-    print("\nrefined mesh:\nn_nodes : {}\nn_tets : {}\nn_faces : {}\nmean mesh spacing : {}\n".format(characteristics["n_nodes"], 
-                                                                                                  characteristics["n_tets"],
-                                                                                                  characteristics["n_faces_Surface"],
-                                                                                                  average_mesh_spacing))
-    

@@ -31,5 +31,5 @@ mesh.write("./data/pygalmesh/mesh_PYGALMESH_surf_tets{}.stl".format( str(tets_ci
 
 # FEniCS input mesh + display mesh with vedo.dolfin
 # -------------------------------------------------
-mesh_fenics = fenics.Mesh("./data/pygalmesh/mesh_PYGALMESH_vol_tets{}.xml".format(str(tets_circumradius).replace(".", "")))
+mesh_fenics = fenics.Mesh("mesh_PYGALMESH_vol_tets{}.xml".format(str(tets_circumradius).replace(".", "")))
 vedo.dolfin.plot(mesh_fenics, wireframe=False, text='pygalmesh mesh', style='paraview', axes=4).close()

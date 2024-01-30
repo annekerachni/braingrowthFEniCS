@@ -5,25 +5,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import vedo.dolfin
-import time
 import argparse
 import json
 import time
+from mpi4py import MPI
+import sys, os
 
-import sys
-sys.path.append(".")
+
+sys.path.append(os.path.join(sys.path[0], 'FEM_biomechanical_model')) # sys.path[0]: ~/braingrowthFEniCS/ from any local path
+sys.path.append(os.path.join(sys.path[0], 'utils'))
+#print(sys.path)
 
 from FEM_biomechanical_model import preprocessing, numerical_scheme_temporal, numerical_scheme_spatial, mappings, contact, differential_layers, growth, projection
 from utils.export_functions import export_simulation_outputmesh_data, export_simulation_end_time_and_iterations, export_XML_PVD_XDMF
-from utils.converters import convert_meshformats_to_vtk
-
+from utils.converters import convert_meshformats_to_vtk 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='braingrowthFEniCS/ Simulate human cortical folding on 3D brain geometry')
 
-    parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=False, 
-                        default='./data/brainmesh.xml') 
+    parser.add_argument('-i', '--input', help='Path to input mesh (.xml; .xdmf)', type=str, required=True, 
+                        default='./data/brainmesh.xdmf') 
                         
     parser.add_argument('-n', '--normalization', help='Is normalization of the input mesh required? (required by braingrowthFEniCS)', type=bool, required=False, default=True)
     
@@ -38,11 +40,11 @@ if __name__ == '__main__':
                                  "T0": 0.0, "Tmax": 1.0, "Nsteps": 100,
                                  "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}) # try with "preconditioner":"jacobi"; "ilu" https://fr.wikipedia.org/wiki/Pr%C3%A9conditionneur
     
-    parser.add_argument('-o', '--output', help='Output folder path', type=str, required=False, 
-                        default='./simulation_braingrowth/results/')
+    parser.add_argument('-o', '--output', help='Path to output folder', type=str, required=True, 
+                        default='results')
                                     
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
-    parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')
+    parser.add_argument('-v', '--visualization', help='Visualization during simulation (deactivated by default)', action='store_true')
     
     args = parser.parse_args() 
 
@@ -71,8 +73,18 @@ if __name__ == '__main__':
     # ----
     # mesh & boundary mesh
     print("\nimporting mesh...")
+    
     inputmesh_path = args.input
-    mesh = fenics.Mesh(inputmesh_path)
+    inputmesh_format = inputmesh_path.split('.')[-1]
+
+    if inputmesh_format == "xml":
+        mesh = fenics.Mesh(inputmesh_path)
+
+    elif inputmesh_format == "xdmf":
+        mesh = fenics.Mesh()
+        with fenics.XDMFFile(inputmesh_path) as infile:
+            infile.read(mesh)
+            
     bmesh = fenics.BoundaryMesh(mesh, "exterior") # bmesh at t=0.0 (cortex envelop)
 
     if args.visualization == True:
@@ -113,10 +125,13 @@ if __name__ == '__main__':
 
     # Export the characteristics of mesh_TO 
     # -------------------------------------
-    fenics.File(args.output + "mesh_T0.xml") << mesh
-    convert_meshformats_to_vtk.xml_to_vtk(args.output + "mesh_T0.xml", args.output + "mesh_T0.vtk")
-    export_simulation_outputmesh_data.export_resultmesh_data(args.output + "analytics/",
-                                                             args.output + "mesh_T0.vtk",
+    # fenics.File(args.output + "mesh_T0.xml") << mesh
+    with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_T0.xdmf")) as xdmf:
+            xdmf.write(mesh)
+            
+    convert_meshformats_to_vtk.xdmf_to_vtk(os.path.join(args.output, "mesh_T0.xdmf"), os.path.join(args.output, "mesh_T0.vtk"))
+    export_simulation_outputmesh_data.export_resultmesh_data(os.path.join(args.output, "analytics/"),
+                                                             os.path.join(args.output, "mesh_T0.vtk"),
                                                              args.parameters["T0"],
                                                              0,
                                                              0.0,
@@ -490,14 +505,19 @@ if __name__ == '__main__':
         #############################
         """
         if i%10 == 0:
-            fenics.File(args.output + "mesh_{}.xml".format(t)) << mesh
-            convert_meshformats_to_vtk.xml_to_vtk(args.output + "mesh_{}.xml".format(t), args.output + "mesh_{}.vtk".format(t))
+            path_xdmf = os.path.join(args.output, "mesh_{}.xdmf".format(t)) 
+            path_vtk = os.path.join(args.output, "mesh_{}.vtk".format(t)) 
+            
+            with fenics.XDMFFile(MPI.COMM_WORLD, path_xdmf) as xdmf:
+                xdmf.write(mesh)
+            
+            convert_meshformats_to_vtk.xdmf_to_vtk(path_xdmf, path_vtk)
             export_simulation_outputmesh_data.export_resultmesh_data(args.output,
-                                                                    args.output + "mesh_{}.vtk".format(t),
-                                                                    t,
-                                                                    i+1,
-                                                                    total_computational_cost,
-                                                                    "mesh_{}.txt".format(t))
+                                                                     path_vtk,
+                                                                     t,
+                                                                     i+1,
+                                                                     total_computational_cost,
+                                                                     "mesh_{}.txt".format(t))
         """
         
 
@@ -521,10 +541,13 @@ if __name__ == '__main__':
     # Export final mesh characteristics 
     ###################################
     total_computational_time = time.time () - start_time
-    fenics.File(args.output + "mesh_Tmax.xml") << mesh
-    convert_meshformats_to_vtk.xml_to_vtk(args.output + "mesh_Tmax.xml", args.output + "mesh_Tmax.vtk")
-    export_simulation_outputmesh_data.export_resultmesh_data(args.output + "analytics/",
-                                                             args.output + "mesh_Tmax.vtk",
+    
+    with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_Tmax.xdmf")) as xdmf:
+        xdmf.write(mesh)
+        
+    convert_meshformats_to_vtk.xdmf_to_vtk(os.path.join(args.output, "mesh_Tmax.xdmf"), os.path.join(args.output, "mesh_Tmax.vtk"))
+    export_simulation_outputmesh_data.export_resultmesh_data(os.path.join(args.output, "analytics/"),
+                                                             os.path.join(args.output, "mesh_Tmax.vtk"),
                                                              t,
                                                              i+1,
                                                              total_computational_time,
