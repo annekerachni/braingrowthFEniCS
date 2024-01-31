@@ -13,9 +13,9 @@
 #### Brain growth mechanics:
 - problem:
   - balance of the linear momentum &#8594; damped elastodynamics PDE
-  - kinematics: F = Fe.Fg (multiplicative decomposition of the deformation into elastic and growth deformations), with Fg tangential and differential.
+  - kinematics: $F = F^e.F^g$ (multiplicative decomposition of the deformation into elastic and growth deformations), with $F^g$ tangential and differential.
 - constitutive model: Neo-Hookean
-- boundary conditions: traction-free (Neumann)
+- boundary conditions: traction-free (Neumann) + contact
 - growth kinetics: linear and homogeneous
 - tangential growth tensor
 
@@ -48,7 +48,7 @@
   - *grRAD*: weigth for radial growth [-]
 
 - time integration scheme for dynamical PDE: 
-  - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: alphaM=0.2,alphaF=0.4; Newmark-β method: alphaM=0.,alphaF=0.)
+  - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: $\alpha_{M}=0.2$, $\alpha_{F}=0.4$; Newmark-β method: $\alpha_{M}=0.$, $\alpha_{F}=0.$) 
 
 - Simulation:
   - *T0*: initial numerical time, when mesh is smooth.
@@ -58,7 +58,7 @@
 
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: `conda create -n fenicsvenv -c conda-forge fenics`
-- Simulations can be launched on sphere geometries via `simulation_spheregrowth` or on brain ones via `simulation_braingrowth`
+- Simulations can be launched on sphere geometries via `main_sphere_growth.py` or on brain ones via `main_brain_growth.py`
 - e.g. launch command: `python main_sphere_growth.py -i sphere.xdmf  -p ‘{"H0": 0.03, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 0.5, "alphaTAN": 3.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 1.0, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}’ -o results`
 
 ## References
