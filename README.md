@@ -7,7 +7,7 @@
 
 - The biomechanical model `FEM_biomechanical_model` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
   
-- The whole simulation pipeline relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `nifti2mesh`, `metrics`, `utils`
+- The whole simulation pipeline relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `niftitomesh`, `metrics`, `utils`
 
 ## Biomechanical model
 #### Brain growth mechanics:
@@ -59,7 +59,7 @@
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: `conda create -n fenicsvenv -c conda-forge fenics`
 - Simulations can be launched on sphere geometries via `simulation_spheregrowth` or on brain ones via `simulation_braingrowth`
-- e.g. launch command: `python main_sphere_growth.py -i sphere.xdmf  -p ‘{"H0": 0.03, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 0.5, "alphaTAN": 3.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 1.0, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}’ -o results/`
+- e.g. launch command: `python main_sphere_growth.py -i sphere.xdmf  -p ‘{"H0": 0.03, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 0.5, "alphaTAN": 3.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 1.0, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}’ -o results`
 
 ## References
 - T. Tallinen et al., On the growth and form of cortical convolutions. Nature Physics, 12(6):588–593, 2016 
