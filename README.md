@@ -1,7 +1,7 @@
 # braingrowthFEniCS
  
 ## Presentation
-**braingrowthFEniCS** is a simulation framework for 3D human brain folding simulation. It includes a computational model of the brain growth dynamics, implemented in Python with the FEniCS library (version 2019.1.0). 
+**braingrowthFEniCS** is a biomechanical framework for 3D human brain folding simulation. It includes a computational model of the brain growth dynamics, implemented in Python with the FEniCS library (version 2019.1.0). 
 
 ![pipeline](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/b3fea58f-2579-4bf0-99ee-1fdcecfd5d1d)
 
