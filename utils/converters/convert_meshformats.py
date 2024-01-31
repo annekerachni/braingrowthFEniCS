@@ -87,7 +87,6 @@ def get_face_indices(mesh, n_nodes, n_tets):
 def xml_to_xdmf(input_file_xml, output_file_xdmf):
     mesh = fenics.Mesh(input_file_xml)
     meshio.write(output_file_xdmf, meshio.Mesh(points=mesh.coordinates(), cells={'tetra': mesh.cells()})) 
-    print('mesh file was well converted from "xml" to "xdmf" format\n')
 
     return
 
@@ -108,7 +107,6 @@ def vtk_to_xml_xdmf(input_file_vtk, output_file_xml_xdmf):
     #mesh_triangle = meshio.Mesh(points=mesh.points, cells={"triangle": mesh.cells_dict['triangle']}) # --> only surface triangle will be written (surface mesh in .xml, .xdmf)
     #mesh_tetra_triangle = meshio.Mesh(points = mesh.points, cells = {'tetra': mesh.cells_dict['tetra'], 'triangle': mesh.cells_dict['triangle']})
     meshio.write(output_file_xml_xdmf, mesh_tetra) # .xml and .xdmf formats do not recognize "mixed" type. Keep tetraedrons only.
-    print('output file (with tetra cells) well written down in XML format')
 
     return 
 
@@ -121,6 +119,9 @@ def msh_to_xml_xdmf(input_file_msh, output_file_xml_xdmf):
     meshio.write(output_file_xml_xdmf, meshio.Mesh(points=mesh.points, cells={'tetra': mesh.cells_dict['tetra']})) 
     #meshio.write(output_file_xml_xdmf, meshio.Mesh(points=mesh.points, cells={'tetra': mesh.cells_dict['tetra'], 'triangle': mesh.cells_dict['triangle']}))
 
+    outputmesh_format = output_file_xml_xdmf.split('.')[-1]
+    print('\nmesh file was well converted from "msh" to "{}" format\n'.format(outputmesh_format))
+    
     return 
 
 
@@ -131,6 +132,9 @@ def stl_to_xml_xdmf_2D(input_file_stl, output_file_xml_xdmf):
     """
     mesh = meshio.read(input_file_stl) 
     meshio.write(output_file_xml_xdmf, meshio.Mesh(points = mesh.points, cells = {'triangle': mesh.cells_dict['triangle']})) 
+    
+    outputmesh_format = output_file_xml_xdmf.split('.')[-1]
+    print('\nmesh file was well converted from "stl" to "{}" format (surface mesh)\n'.format(outputmesh_format))
 
     return 
 
@@ -139,6 +143,9 @@ def mesh_to_xml_xdmf(output_file_xml_xdmf, coordinates, tets):
     #can be also use as 'mesh_to_vtk': in that case, use output_file_path in .vtk 
     meshio.write(output_file_xml_xdmf, meshio.Mesh(points=coordinates, cells=[("tetra", tets)]))  # .xml and .xdmf formats do not recognize "mixed" type. Keep tetraedrons only.
 
+    outputmesh_format = output_file_xml_xdmf.split('.')[-1]
+    print('\nmesh file was well converted from "mesh" to "{}" format\n'.format(outputmesh_format))
+    
     return
 
 # Convert to .stl
@@ -153,6 +160,8 @@ def msh_to_stl(input_file_path, output_file_stl):
             triangle_cells = cell.data
     triangle_mesh = meshio.Mesh(points=msh.points, cells={"triangle": triangle_cells})
     meshio.write(output_file_stl, triangle_mesh)
+    
+    print('\nmesh file was well converted from "msh" to "stl" format (triangle elements only were kept)\n')
 
     return 
 
@@ -166,6 +175,8 @@ def vtk_to_stl(input_file_vtk, output_file_stl):
             triangle_cells = cell.data
     triangle_mesh = meshio.Mesh(points=mesh.points, cells={"triangle": triangle_cells})
     meshio.write(output_file_stl, triangle_mesh)
+    
+    print('\nmesh file was well converted from "vtk" to "stl" format (triangle elements only were kept)\n')
 
     return 
 
@@ -174,6 +185,8 @@ def mesh_to_stl(output_file_stl, faces_coords, faces):
     #can be also use as 'mesh_to_vtk': in that case, use output_file_path in .vtk 
 
     meshio.write(output_file_stl, meshio.Mesh(points=faces_coords, cells=[("triangle", faces)])) 
+    
+    print('\nmesh file was well converted from "mesh" to "stl" format (triangle elements only were kept)\n')
 
     return
 
@@ -191,6 +204,8 @@ def xml_to_stl(input_file_xml, output_file_stl):
 
     #meshio.write(output_file_xml, meshio.Mesh(points=coordinates, cells={'tetra': tets})) 
     meshio.write(output_file_stl, meshio.Mesh(points=bmesh_coordinates, cells={'triangle': faces}))
+    
+    print('\nmesh file was well converted from "xml" to "stl" format (triangle elements only were kept)\n')
 
     return
 
@@ -209,6 +224,8 @@ def xdmf_to_stl(input_file_xdmf, output_file_stl):
     bmesh_coordinates = bmesh.coordinates()
 
     meshio.write(output_file_stl, meshio.Mesh(points=bmesh_coordinates, cells={'triangle': faces}))
+    
+    print('\nmesh file was well converted from "xdmf" to "stl" format (triangle elements only were kept)\n')
 
     return
 
@@ -223,6 +240,8 @@ def msh_to_vtk(input_file_msh, output_file_vtk):
     mesh = meshio.read(input_file_msh) 
     meshio.write(output_file_vtk, meshio.Mesh(points = mesh.points, cells = {'tetra': mesh.cells_dict['tetra'], 'triangle': mesh.cells_dict['triangle']})) 
 
+    print('\nmesh file was well converted from "msh" to "vtk" format\n')
+    
     return 
 
 def mesh_to_vtk(output_file_mesh, coordinates, tets, faces): 
@@ -243,6 +262,8 @@ def xml_to_vtk(input_file_xml, output_file_vtk):
 
     vtk_mesh = meshio.Mesh(points=coordinates, cells={'tetra': tets}) # only tetraedron elements 
     meshio.write(output_file_vtk, vtk_mesh)
+    
+    print('\nmesh file was well converted from "xml" to "vtk" format\n')
 
     return 
 
@@ -258,17 +279,64 @@ def xdmf_to_vtk(input_file_xdmf, output_file_vtk):
 
     vtk_mesh = meshio.Mesh(points=coordinates, cells={'tetra': tets}) # only tetraedron elements 
     meshio.write(output_file_vtk, vtk_mesh) 
+    
+    print('\nmesh file was well converted from "xdmf" to "vtk" format\n')
 
+    return 
+
+# Convert to .gii
+#################
+import nibabel as nib
+
+def stl_to_gii(input_file_stl, output_file_gii):
+    
+    # read .stl
+    # ---------
+    triangle_mesh = meshio.read(input_file_stl)
+
+    # vertices coords
+    vertices = triangle_mesh.points
+
+    # faces
+    faces = triangle_mesh.cells_dict["triangle"]
+    print("number of faces: {}".format(len(triangle_mesh.cells_dict["triangle"])))
+    
+    #write .gii
+    # ---------
+     #meshio.write(output_file_gii, meshio.Mesh(points=mesh.points, cells={'triangle': mesh.cells_dict['triangle']}))
+
+    # https://netneurolab.github.io/neuromaps/_modules/neuromaps/images.html
+
+    # Prepare img
+    vert = nib.gifti.GiftiDataArray(vertices, 'NIFTI_INTENT_POINTSET',
+                                    'NIFTI_TYPE_FLOAT32',
+                                    coordsys=nib.gifti.GiftiCoordSystem(3, 3))
+    
+    tri = nib.gifti.GiftiDataArray(faces, 'NIFTI_INTENT_TRIANGLE',
+                                   'NIFTI_TYPE_INT32')
+    
+    img = nib.GiftiImage(darrays=[vert, tri])
+
+    # Save .gii
+    """
+    fn = Path(output_file_gii)
+    img = nib.load(fn)
+    for attr in ('dataspace', 'xformspace'):
+        setattr(img.darrays[0].coordsys, attr, val=3)"""
+    nib.save(img, output_file_gii)
+    
+    print('\nmesh file was well converted from "stl" to "gii" format\n')
+    
     return 
 
 
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser(description='Convert mesh formats to XML (FEniCS format)')
     
-    parser.add_argument('-i', '--input', help='Path to input mesh. Consider using following input formats depending on output format required: .msh, .mesh, .vtk, .stl -> .xml / .msh, .mesh, .vtk, .stl, .xml -> .xdmf / .msh, .mesh, .vtk, .xml, .xdmf -> . stl / .msh, .mesh, .xml, .xdmf -> .vtk', type=str, required=True, 
+    parser.add_argument('-i', '--input', help='Path to input mesh. Consider using following input formats depending on output format required: .msh, .mesh, .vtk, .stl -> .xml / .msh, .mesh, .vtk, .stl, .xml -> .xdmf / .msh, .mesh, .vtk, .xml, .xdmf -> . stl / .msh, .mesh, .xml, .xdmf -> .vtk / .stl -> .gii', type=str, required=True, 
                         default='./data/brainmesh.mesh')  
     
-    parser.add_argument('-o', '--output', help='Path to output mesh. Possible output formats for each input format: \n.msh -> .xml, .xdmf, .stl / .mesh -> .xml, .xdmf, .stl / .stl -> .xml, .xdmf / .vtk -> .xml, .xdmf, .stl / .xml -> .xdmf, .stl / .xdmf -> .stl', type=str, required=True, 
+    parser.add_argument('-o', '--output', help='Path to output mesh. Possible output formats for each input format: \n.msh -> .xml, .xdmf, .stl / .mesh -> .xml, .xdmf, .stl / .stl -> .xml, .xdmf, .gii / .vtk -> .xml, .xdmf, .stl / .xml -> .xdmf, .stl / .xdmf -> .stl', type=str, required=True, 
                         default='./data/brainmesh.xdmf') 
 
     args = parser.parse_args()
@@ -306,6 +374,8 @@ if __name__ == '__main__':
     elif inputmesh_format == 'stl': # surface mesh
         if outputmesh_format == 'xml' or outputmesh_format == 'xdmf':
             stl_to_xml_xdmf_2D(input_file_path, output_file_path)
+        elif outputmesh_format == 'gii':
+            stl_to_gii(input_file_path, output_file_path)
     
     
     elif inputmesh_format == 'vtk':
@@ -317,7 +387,7 @@ if __name__ == '__main__':
 
     elif inputmesh_format == 'xml': # legacy FEniCS (.xml) 
         if outputmesh_format == 'xdmf':
-            xml_to_xdmf(input_file_path, output_file_path)
+            xml_to_xdmf(input_file_path, output_file_path)            
         elif outputmesh_format == 'stl':
             xml_to_stl(input_file_path, output_file_path)
         elif outputmesh_format == 'vtk':

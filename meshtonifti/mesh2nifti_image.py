@@ -4,10 +4,9 @@ import nibabel as nib
 from scipy.interpolate import griddata
 import meshio
 import itk
-import time
+import os, sys
+sys.path.append(sys.path[0]) 
 
-import sys
-sys.path.append(".")
 from spatialorientationadapter_to_ras import apply_lps_ras_transformation
 
 

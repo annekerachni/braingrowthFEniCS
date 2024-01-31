@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Mask brain MRI nifti with selected parcels from provided segmentation')
     
-    parser.add_argument('-i', '--inputdata', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=False, 
+    parser.add_argument('-i', '--inputdata', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=True, 
                         default={ 
                                  
                                  "nifti":'./fetal_database/structural/t2-t36.00.nii.gz',
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     parser.add_argument('-hw', '--halforwholebrain', help='Half or whole brain: choose between "whole"; "left" or "right"', type=str, required=False, 
                         default='whole')
     
-    parser.add_argument('-par', '--segmentationparcelstokeep', help='Brain regions and associated value of the segmentation parcels to keep', type=json.loads, required=False, 
+    parser.add_argument('-par', '--segmentationparcelstokeep', help='Brain regions and associated value of the segmentation parcels to keep', type=json.loads, required=True, 
                         default={   
                                     "left":{
                                             "cortex": 3.,
@@ -106,7 +106,7 @@ if __name__ == '__main__':
                                 
                                 }) # e.g. dhcp segmentation parcels (See data from https://gin.g-node.org/kcl_cdb/fetal_brain_mri_atlas/src/master/parcellations)
     
-    parser.add_argument('-o', '--outputmaskednifti', help='Path to masked nifti (.nii.gz)', type=str, required=False, 
+    parser.add_argument('-o', '--outputmaskednifti', help='Path to masked nifti (.nii.gz)', type=str, required=True, 
                         default='./data/dhcp/dhcp_atlas/36GW/dhcp36GW_masked.nii.gz')
     
     parser.add_argument('-d', '--displaymode', help='Display nifti before and after masking', type=bool, required=False, 

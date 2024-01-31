@@ -1,15 +1,13 @@
 import fenics
 import numpy as np
-import itk
 import argparse
 import json
 import vedo.dolfin
 import nibabel
 from nibabel.affines import apply_affine
+import os, sys
 
-import sys
-sys.path.append(".")
-
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))  # braingrowthFEniCS
 from FEM_biomechanical_model import mappings
 
 """
@@ -100,25 +98,25 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Transfer MRI values (e.g. Segmentation, FA) from nifti to mesh (using nibabel and FEniCS .xml mesh)')
     
-    parser.add_argument('-m', '--inputmesh', help='Path to input mesh (.xml, .stl)', type=str, required=False, 
-                        default='./data/fetal_dhcp_atlas/21GW/dhcp21GW_728Ktets.xml') 
+    parser.add_argument('-m', '--inputmesh', help='Path to input mesh (.xml, .xdmf, .stl)', type=str, required=True, 
+                        default='./data/brainmesh.xdmf') 
     
-    parser.add_argument('-niis', '--seriesofniftis', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=False, 
+    parser.add_argument('-niis', '--seriesofniftis', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=True, 
                         default={ 
                                  
-                                 "T2":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/structural/t2-t21.00.nii.gz',
+                                 "T2":'./fetal_database/structural/t2-t21.00.nii.gz',
                                  
-                                 "segmentation":'/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/parcellations/tissue-t21.00_dhcp-19.nii.gz',
+                                 "segmentation":'./fetal_database/parcellations/tissue-t21.00_dhcp-19.nii.gz',
                                  
-                                 "diffusion_FA": '/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/diffusion/fa-t21.00.nii.gz'
+                                 "diffusion_FA": './fetal_database/diffusion/fa-t21.00.nii.gz'
                                  
                                  } )
     
     
-    parser.add_argument('-o', '--output', help='Path to output folder where to write mesh + loaded nifti values (.xdmf))', type=str, required=False, 
+    parser.add_argument('-o', '--output', help='Path to output folder where to write mesh + loaded nifti values (.xdmf))', type=str, required=True, 
                         default='./MRI_driven_parameters/meshes_with_nodal_values/')
     
-    parser.add_argument('-ofn', '--outputfilename', help='Name basis for the output files (.xdmf))', type=str, required=False, 
+    parser.add_argument('-ofn', '--outputfilename', help='Name basis for the output files (.xdmf))', type=str, required=True, 
                         default='_21GW.xdmf')
     
     args = parser.parse_args()
@@ -134,9 +132,18 @@ if __name__ == '__main__':
     inputmesh_format = args.inputmesh.split('.')[-1]
     
     # Input mesh
-    if inputmesh_format == 'xml': # FEniCS mesh path (.xml)
+    if inputmesh_format == 'xml' or inputmesh_format == 'xdmf':
         
-        mesh = fenics.Mesh(args.inputmesh)
+    	# Input mesh
+    	############
+        if inputmesh_format == 'xml':
+            meshFEniCS = fenics.Mesh(args.inputmesh)
+            
+        elif inputmesh_format == 'xdmf':
+            mesh = fenics.Mesh()
+            with fenics.XDMFFile(args.inputmesh) as infile:
+                infile.read(mesh)
+                
         coordinates = mesh.coordinates()
         
         # Revert X<>Y coordinates inversion performed by Netgen:

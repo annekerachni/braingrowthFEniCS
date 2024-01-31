@@ -47,8 +47,8 @@ def nii_itk(nii_path): #https://discourse.itk.org/t/solved-transformindextophysi
 import argparse
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='To be used after the "meshtonifti" process with reference MRI nifti: Compare the parameters of the resulting nifti to the ones of the reference MRI nifti.')
-    parser.add_argument('-i', '--input', help='Path to resulting nifti obtained with the "meshtonifti" process (with reference MRI nifti)', type=str, required=False, default='../results/dhcp500_displacements.nii.gz')
-    parser.add_argument('-r', '--reference', help='Path to the reference MRI nifti', type=str, required=False, default='./data/dhcp/dhcp0.nii')
+    parser.add_argument('-i', '--input', help='Path to resulting nifti obtained with the "meshtonifti" process (with reference MRI nifti)', type=str, required=True, default='./results/dhcp500_displacements.nii.gz')
+    parser.add_argument('-r', '--reference', help='Path to the reference MRI nifti', type=str, required=True, default='./data/dhcp/dhcp0.nii')
     args = parser.parse_args()
 
     meshtonifti_resulting_nifti_path = args.input

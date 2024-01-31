@@ -1,13 +1,9 @@
-import fenics
 import numpy as np
 import itk
-import argparse
-import json
 import meshio
-import vedo.dolfin
+import os, sys
 
-import sys
-sys.path.append(".")
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))  # braingrowthFEniCS
 from niftitomesh.spatialorientationadapter_to_ras import apply_lps_ras_transformation, nifti_itk_analyzer, itk_coordinate_orientation_system_analyzer
 
 

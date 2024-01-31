@@ -1,10 +1,12 @@
 import fenics
 import vedo.dolfin
-import sys
-sys.path.append(".")
-import numpy as np
+import argparse
+from mpi4py import MPI
+import sys, os
 
+sys.path.append(os.path.dirname(sys.path[0])) # braingrowthFEniCS
 from FEM_biomechanical_model import preprocessing
+
 
 def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode):
 
@@ -80,17 +82,10 @@ if __name__ == '__main__':
     """
 
     # REFINE MESH NEAR BY BOUNDARY
-    # ----------------------------
-    import argparse
-    from mpi4py import MPI
-    import sys, os
-    
-    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'FEM_biomechanical_model'))
-    from FEM_biomechanical_model import preprocessing
-    
+    # ----------------------------   
     parser = argparse.ArgumentParser(description='Refine mesh near by surface boundary')
 
-    parser.add_argument('-i', '--inputmesh', help='Path to mesh to refine (.xml, .xdmf)', type=str, required=True, 
+    parser.add_argument('-i', '--inputmesh', help='Path to 3D mesh to refine (.xml, .xdmf)', type=str, required=True, 
                         default='./data/sphere.xdmf') 
     
     #parser.add_argument('-o', '--outputmesh', help='Path to output folder', type=str, required=True, 
@@ -100,6 +95,8 @@ if __name__ == '__main__':
                         default=5)  
     # if 0: no refinement 
     # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
+    
+    parser.add_argument('-v', '--visualization', help='Visualization mode (deactivated by default)', type=bool, required=False, default=False)
 
     args = parser.parse_args()
 
@@ -120,10 +117,11 @@ if __name__ == '__main__':
         with fenics.XDMFFile(input_file_path) as infile:
             infile.read(FEniCSmesh_to_refine)
     
-    vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
+    if args.visualization == True:
+        vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
 
     # min mesh spacing
-    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_min_mesh_spacing(FEniCSmesh_to_refine)
+    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(FEniCSmesh_to_refine)
 
     # get required args for refinement function
     brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
@@ -139,14 +137,21 @@ if __name__ == '__main__':
     
     # generate XDMF refined mesh
     # --------------------------
+    direname = os.path.dirname(os.path.abspath(input_file_path))
+    filename = os.path.basename(input_file_path)
+    filename_without_format = filename.split('.')[0]
+    
     if inputmesh_format == "xml":
-        output_path = os.path.join(input_file_path.split('.')[0], '_refined.xml')
-        fenics.File(output_path) << refined_FEniCSmesh
+        output_mesh_path = os.path.join(direname, filename_without_format + "_refined.xml") 
+        fenics.File(output_mesh_path) << refined_FEniCSmesh
         
     elif inputmesh_format == 'xdmf':
-        output_path = os.path.join(input_file_path.split('.')[0], '_refined.xdmf')
-        with fenics.XDMFFile(MPI.COMM_WORLD, output_path) as xdmf:
+        output_mesh_path = os.path.join(direname, filename_without_format + "_refined.xdmf") 
+        with fenics.XDMFFile(MPI.COMM_WORLD, output_mesh_path) as xdmf:
             xdmf.write(refined_FEniCSmesh)
 
-    vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
+    if args.visualization == True:
+        vedo.dolfin.plot(refined_FEniCSmesh, wireframe=False, text='refined mesh', style='paraview', axes=4).close()
+    
+    print('\nmesh was refined near by its surface: {} was well written down'.format(output_mesh_path))
 

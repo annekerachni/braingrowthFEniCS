@@ -1,7 +1,9 @@
 import fenics
 import meshio
 import numpy as np
-import os 
+import os, sys
+
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))  # braingrowthFEniCS
 
 from FEM_biomechanical_model.preprocessing import compute_geometrical_characteristics, compute_center_of_gravity, compute_mesh_spacing
 from metrics import brain_volume, brain_external_area
@@ -110,7 +112,6 @@ def export_resultmesh_data(output_folder_path,
 if __name__ == '__main__':
 
     import argparse
-    import json
     
     parser = argparse.ArgumentParser(description='Export characteristical data from the folded mesh (by braingrowthFEniCS)')
 
@@ -118,23 +119,26 @@ if __name__ == '__main__':
     #default=["./simulations/series_of_nsteps/nsteps2000/sphere_Ptot_alpha3_nsteps2000_newtonabs8rel7relax1_gmres_sor_iteration1700over2000.vtk",
     #         ]) 
     
-    parser.add_argument('-t', '--numericaltimes', help='numerical time (between 0. and 1.)', type=int, nargs='+', required=False, 
+    parser.add_argument('-t', '--numericaltimes', help='numerical time (between 0. and 1.)', type=int, nargs='+', required=True, 
     default=[0.4, 0.6, 0.8, 0.85, 1.0]) 
     
-    #parser.add_argument('-it', '--step', help='step reached', type=int, required=False, 
+    #parser.add_argument('-it', '--step', help='step reached', type=int, required=True, 
     #default=1700) 
     
-    parser.add_argument('-n', '--nsteps', help='nsteps goal', type=int, required=False, 
+    parser.add_argument('-n', '--nsteps', help='nsteps goal', type=int, required=True, 
     default=100) 
+    
+    parser.add_argument('-o', '--output', help='Path to output folder', type=str, required=True, 
+                        default='results')
 
     args = parser.parse_args()
 
     # folder path where to export the data linked to the result-mesh folded by the braingrowthFEniCS simulation 
-    output_folder_path = "./simulation_braingrowth/results/analytics/"
+    output_folder_path = args.output
 
     for numerical_time in args.numericaltimes:
         # path to the result-folded mesh in .vtk format
-        inputmesh_vtk_file_path = ".simulation_braingrowth/results/brainmesh_nsteps{}_time{}_volume.vtk".format(args.nsteps, str(numerical_time).split('.')[0] + "_" + str(numerical_time).split('.')[-1])
+        inputmesh_vtk_file_path = "./results/brainmesh_nsteps{}_time{}_volume.vtk".format(args.nsteps, str(numerical_time).split('.')[0] + "_" + str(numerical_time).split('.')[-1])
 
         # convergence of the simulation
         number_of_iterations = 0 #args.step

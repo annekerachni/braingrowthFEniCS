@@ -5,9 +5,11 @@ import meshio
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0]))) 
 
 from FEM_biomechanical_model import preprocessing
-from simulation_braingrowth.MRI_driven_parameters.FA import FA_2_growth_laws
+from MRI_driven_parameters.FA_2_growthcoef import FA_to_growth_law
 
 # Tangential growth from FA
 ###########################
@@ -47,7 +49,7 @@ def tangential_growth_coef_from_FA(linear_coef, alphaTAN, vertex2dofs_S, normali
     
     # Defining tangential growth coefficient 'alphaTAN' in correlation to FA nodal value. (FA ++ => neuronal maturation -- => neuron matures => tangential growth ++)
     for vertex, scalarDOF in enumerate(vertex2dofs_S):
-        alphaTAN.vector()[scalarDOF] = FA_2_growth_laws.FA_to_tangential_growth_law_linearrelationship(linear_coef, normalized_fa.vector()[scalarDOF] ) # FA should be a float between 0. and 1. => normalized_fa = fa/np.max(fa)  + growth is a linear function of FA. (here we test alphaTAN = 5*FA)
+        alphaTAN.vector()[scalarDOF] = FA_to_growth_law.FA_to_tangential_growth_law_linearrelationship(linear_coef, normalized_fa.vector()[scalarDOF] ) # FA should be a float between 0. and 1. => normalized_fa = fa/np.max(fa)  + growth is a linear function of FA. (here we test alphaTAN = 5*FA)
         #alphaTAN.vector()[scalarDOF] = FA_to_tangential_growth_law_gompertz(linear_coef, normalized_fa.vector()[scalarDOF])
         #alphaTAN.vector()[scalarDOF] = FA_to_tangential_growth_law_exponential(linear_coef, normalized_fa.vector()[scalarDOF])
         
@@ -72,13 +74,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth elastodynamics 3D model')
     
-    parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=False, 
-                        default='./data/dhcp_mesh.xml') 
+    parser.add_argument('-i', '--input', help='Input mesh path (.xml, .xdmf)', type=str, required=True, 
+                        default='./data/brainmesh.xdmf') 
                         
     parser.add_argument('-n', '--normalization', help='Is normalization of the input mesh required? (required by braingrowthFEniCS)', type=bool, required=False, default=True)
 
-    parser.add_argument('-fa', '--fractionalanisotropy', help='Path to the mesh loaded with FA values onto nodes (.vtk)', type=json.loads, required=False, 
-    default={"21GW": './niftitomesh/transfer_niftivalues_to_meshnodes/results/21GW/MRIniivalues_NearestNeighbor_21GW_homogeneizeCortexLabels.vtk'})
+    parser.add_argument('-fa', '--fractionalanisotropy', help='Path to the mesh loaded with FA values onto nodes (.vtk)', type=json.loads, required=True, 
+    default={"21GW": './MRI_driven_parameters/meshes_with_nodal_values/brainmesh_loaded_with_21GWMRIvalues.vtk'})
+    
+    parser.add_argument('-o', '--output', help='Path to output folder', type=str, required=True, 
+                        default='./MRI_driven_parameters/meshes_with_nodal_values') 
     
     args = parser.parse_args() 
     
@@ -90,7 +95,16 @@ if __name__ == '__main__':
     # mesh & boundary mesh
     print("\nimporting mesh...")
     inputmesh_path = args.input
-    mesh = fenics.Mesh(inputmesh_path)
+    inputmesh_format = inputmesh_path.split('.')[-1]
+
+    if inputmesh_format == "xml":
+        mesh = fenics.Mesh(inputmesh_path)
+
+    elif inputmesh_format == "xdmf":
+        mesh = fenics.Mesh()
+        with fenics.XDMFFile(inputmesh_path) as infile:
+            infile.read(mesh)
+            
     bmesh = fenics.BoundaryMesh(mesh, "exterior") # bmesh at t=0.0 (cortex envelop)
 
     if args.visualization == True:
@@ -143,8 +157,7 @@ if __name__ == '__main__':
     normalized_fa = fenics.Function(S, name="normalizedFA")
     alphaTAN = fenics.Function(S, name="alphaTAN")
     
-    t_simu = 0. # simulation time and corresponding real time
-    outputfolderpath = './braingrowth_simulation/results/'
+    t_simu, tGW = 0., 21 # simulation time and corresponding real time
     
     # Get FA from .vtk
     path_inputmeshloaded_with_FA_VTK = args.fractionalanisotropy
@@ -152,7 +165,7 @@ if __name__ == '__main__':
     # Normalize FA (FA value should be between 0. and 1.)
     fa, normalized_fa = normalize_FA(fa, normalized_fa, vertex2dofs_S, path_inputmeshloaded_with_FA_VTK)
     
-    normalizedFA_file_XDMF = fenics.XDMFFile(args.output + "normalizedFA_{}.xdmf".format(t_simu))
+    normalizedFA_file_XDMF = fenics.XDMFFile(os.path.join(args.output, "brainmesh_loaded_with_normalizedFA_at{}GW.xdmf").format(tGW))
     normalizedFA_file_XDMF.parameters["flush_output"] = True
     normalizedFA_file_XDMF.parameters["functions_share_mesh"] = True
     normalizedFA_file_XDMF.write(normalized_fa, t_simu)
@@ -161,7 +174,7 @@ if __name__ == '__main__':
     linear_coef = 5.
     alphaTAN = tangential_growth_coef_from_FA(linear_coef, alphaTAN, vertex2dofs_S, normalized_fa)
     
-    alphaTAN_file_XDMF = fenics.XDMFFile(outputfolderpath + "alphaTAN_{}.xdmf".format(t_simu))
+    alphaTAN_file_XDMF = fenics.XDMFFile(os.path.join(args.output, "brainmesh_loaded_with_alphaTAN_at{}GW.xdmf").format(tGW))
     alphaTAN_file_XDMF.parameters["flush_output"] = True
     alphaTAN_file_XDMF.parameters["functions_share_mesh"] = True
     alphaTAN_file_XDMF.write(alphaTAN, t_simu)

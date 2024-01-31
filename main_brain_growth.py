@@ -12,13 +12,12 @@ from mpi4py import MPI
 import sys, os
 
 
-sys.path.append(os.path.join(sys.path[0], 'FEM_biomechanical_model')) # sys.path[0]: ~/braingrowthFEniCS/ from any local path
-sys.path.append(os.path.join(sys.path[0], 'utils'))
+sys.path.append(sys.path[0]) # Add sys.path[0]: ~/braingrowthFEniCS/ from any local path
 #print(sys.path)
 
 from FEM_biomechanical_model import preprocessing, numerical_scheme_temporal, numerical_scheme_spatial, mappings, contact, differential_layers, growth, projection
 from utils.export_functions import export_simulation_outputmesh_data, export_simulation_end_time_and_iterations, export_XML_PVD_XDMF
-from utils.converters import convert_meshformats_to_vtk 
+from utils.converters import convert_meshformats 
 
 if __name__ == '__main__':
 
@@ -129,7 +128,7 @@ if __name__ == '__main__':
     with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_T0.xdmf")) as xdmf:
             xdmf.write(mesh)
             
-    convert_meshformats_to_vtk.xdmf_to_vtk(os.path.join(args.output, "mesh_T0.xdmf"), os.path.join(args.output, "mesh_T0.vtk"))
+    convert_meshformats.xdmf_to_vtk(os.path.join(args.output, "mesh_T0.xdmf"), os.path.join(args.output, "mesh_T0.vtk"))
     export_simulation_outputmesh_data.export_resultmesh_data(os.path.join(args.output, "analytics/"),
                                                              os.path.join(args.output, "mesh_T0.vtk"),
                                                              args.parameters["T0"],
@@ -301,10 +300,34 @@ if __name__ == '__main__':
     print("mark no-growth brain regions (e.g. 'longitudinal fissure' - 'ventricules' - 'mammilary bodies')...") # code source: T.Tallinen et al. 2016. See detail in https://github.com/rousseau/BrainGrowth/blob/master/geometry.py   
     for vertex, scalarDOF in enumerate(vertex2dofs_S):
 
+        # sphere filter but is 
+        """
+        rqp = np.linalg.norm( np.array([  0.714*(mesh.coordinates()[vertex, 0] + 0.1), 
+                                                 mesh.coordinates()[vertex, 1], 
+                                                 mesh.coordinates()[vertex, 2] - 0.05  ]))"""
+        
+        # sphere filter
+        """
+        rqp = np.linalg.norm( np.array([  (mesh.coordinates()[vertex, 0]), 
+                                           mesh.coordinates()[vertex, 1], 
+                                           mesh.coordinates()[vertex, 2] - 0.10  ]))"""
         # ellipsoid filter                                     
         rqp = np.linalg.norm( np.array([    0.714 * mesh.coordinates()[vertex, 0], 
                                                     mesh.coordinates()[vertex, 1], 
                                             0.9 *  (mesh.coordinates()[vertex, 2] - 0.10)   ])) 
+        
+        # ellipsoid filter taking into account also the length of the brain (not to consider growth of inter-hemispheres longitudinal fissure)
+        """ 
+        rqp = np.linalg.norm( np.array([    0.73 * mesh.coordinates()[vertex, 0], 
+                                            0.85 * mesh.coordinates()[vertex, 1], 
+                                            0.92 * (mesh.coordinates()[vertex, 2] - 0.15)   ])) """
+                                            
+        
+        """                                 
+        rqp = np.linalg.norm( np.array([    0.8*characteristics["maxx"]/0.8251 * mesh.coordinates()[vertex, 0], # --> 0.8*maxX/0.8251
+                                            0.63 * mesh.coordinates()[vertex, 1] + 0.075, # int(0.6/maxY)
+                                            0.8*characteristics["maxz"]/0.637 * mesh.coordinates()[vertex, 2] - 0.25   ])) # --> 0.8*maxZ/0.637
+        """ 
         
         if rqp < 0.6:
             grNoGrowthZones.vector()[scalarDOF] = max(1.0 - 10.0*(0.6 - rqp), 0.0)
@@ -511,7 +534,7 @@ if __name__ == '__main__':
             with fenics.XDMFFile(MPI.COMM_WORLD, path_xdmf) as xdmf:
                 xdmf.write(mesh)
             
-            convert_meshformats_to_vtk.xdmf_to_vtk(path_xdmf, path_vtk)
+            convert_meshformats.xdmf_to_vtk(path_xdmf, path_vtk)
             export_simulation_outputmesh_data.export_resultmesh_data(args.output,
                                                                      path_vtk,
                                                                      t,
@@ -545,7 +568,7 @@ if __name__ == '__main__':
     with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_Tmax.xdmf")) as xdmf:
         xdmf.write(mesh)
         
-    convert_meshformats_to_vtk.xdmf_to_vtk(os.path.join(args.output, "mesh_Tmax.xdmf"), os.path.join(args.output, "mesh_Tmax.vtk"))
+    convert_meshformats.xdmf_to_vtk(os.path.join(args.output, "mesh_Tmax.xdmf"), os.path.join(args.output, "mesh_Tmax.vtk"))
     export_simulation_outputmesh_data.export_resultmesh_data(os.path.join(args.output, "analytics/"),
                                                              os.path.join(args.output, "mesh_Tmax.vtk"),
                                                              t,

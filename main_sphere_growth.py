@@ -12,21 +12,18 @@ from mpi4py import MPI
 import sys, os
 
 
-sys.path.append(os.path.join(sys.path[0], 'FEM_biomechanical_model')) # sys.path[0]: ~/braingrowthFEniCS/ from any local path
-#sys.path.append(os.path.join(sys.path[0], 'utils', 'export_functions')) # sys.path.append(os.path.join(os.path.dirname(sys.path[0]),'braingrowthFEniCS','utils', 'export_functions')) 
-#sys.path.append(os.path.join(sys.path[0], 'utils', 'converters'))
-sys.path.append(os.path.join(sys.path[0], 'utils'))
+sys.path.append(sys.path[0]) # Add sys.path[0]: ~/braingrowthFEniCS/ from any local path
 #print(sys.path)
 
 from FEM_biomechanical_model import preprocessing, numerical_scheme_temporal, numerical_scheme_spatial, mappings, contact, differential_layers, growth, projection
 from utils.export_functions import export_simulation_outputmesh_data, export_simulation_end_time_and_iterations, export_XML_PVD_XDMF
-from utils.converters import convert_meshformats_to_vtk 
+from utils.converters import convert_meshformats 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='braingrowthFEniCS/ Simulate human cortical folding on spherical geometry ')
 
-    parser.add_argument('-i', '--input', help='Path to input mesh (.xml; .xdmf)', type=str, required=True, 
+    parser.add_argument('-i', '--input', help='Path to input 3D mesh (.xml; .xdmf)', type=str, required=True, 
                         default='./data/sphere.xdmf') 
         
     parser.add_argument('-p', '--parameters', help='Simulation input parameters', type=json.loads, required=False, 
@@ -109,7 +106,7 @@ if __name__ == '__main__':
     with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_T0.xdmf")) as xdmf:
             xdmf.write(mesh)
             
-    convert_meshformats_to_vtk.xdmf_to_vtk(os.path.join(args.output, "mesh_T0.xdmf"), os.path.join(args.output, "mesh_T0.vtk"))
+    convert_meshformats.xdmf_to_vtk(os.path.join(args.output, "mesh_T0.xdmf"), os.path.join(args.output, "mesh_T0.vtk"))
     export_simulation_outputmesh_data.export_resultmesh_data(os.path.join(args.output, "analytics/"),
                                                              os.path.join(args.output, "mesh_T0.vtk"),
                                                              args.parameters["T0"],
@@ -430,7 +427,7 @@ if __name__ == '__main__':
             with fenics.XDMFFile(MPI.COMM_WORLD, path_xdmf) as xdmf:
                 xdmf.write(mesh)
             
-            convert_meshformats_to_vtk.xdmf_to_vtk(path_xdmf, path_vtk)
+            convert_meshformats.xdmf_to_vtk(path_xdmf, path_vtk)
             export_simulation_outputmesh_data.export_resultmesh_data(args.output,
                                                                      path_vtk,
                                                                      t,
@@ -464,7 +461,7 @@ if __name__ == '__main__':
     with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_Tmax.xdmf")) as xdmf:
         xdmf.write(mesh)
         
-    convert_meshformats_to_vtk.xdmf_to_vtk(os.path.join(args.output, "mesh_Tmax.xdmf"), os.path.join(args.output, "mesh_Tmax.vtk"))
+    convert_meshformats.xdmf_to_vtk(os.path.join(args.output, "mesh_Tmax.xdmf"), os.path.join(args.output, "mesh_Tmax.vtk"))
     export_simulation_outputmesh_data.export_resultmesh_data(os.path.join(args.output, "analytics/"),
                                                              os.path.join(args.output, "mesh_Tmax.vtk"),
                                                              t,

@@ -1,10 +1,5 @@
 import pyvista 
-import meshio
 import numpy as np
-import fenics
-
-import sys
-sys.path.append(".") 
 
 # Before using the program, the whole mesh from the 'displacement.xdmf' file needs to be exported as .vtk 
 # To do so:
@@ -116,10 +111,17 @@ def interval_filtered_tets_quality(quality_measure, qualitymeasure_pyvistagrid, 
 
 
 if __name__ == '__main__':
-
+    import argparse
+    parser = argparse.ArgumentParser(description='Analyse folded mesh quality ')
+    
+    parser.add_argument('-i', '--input', help='Path to folded mesh file (.vtk)', type=str, required=True, 
+                        default='./results/growth_simulation.vtk')
+    
+    args = parser.parse_args()
+    
     # Import the whole mesh in .vtk format
     # ------------------------------------
-    meshfile_vtk = './simulation_spheregrowth/results/growth_simulation.vtk'
+    meshfile_vtk = args.input
 
     # Computing min, mean and max mesh elements aspect ratio
     # ------------------------------------------------------

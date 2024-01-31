@@ -5,9 +5,9 @@ import argparse
 import json
 import meshio
 import vedo.dolfin
+import os, sys
 
-import sys
-sys.path.append(".")
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))  # braingrowthFEniCS
 from niftitomesh.spatialorientationadapter_to_ras import apply_lps_ras_transformation, nifti_itk_analyzer, itk_coordinate_orientation_system_analyzer
 
 
@@ -67,10 +67,10 @@ if __name__ == '__main__':
         
     parser = argparse.ArgumentParser(description='Transfer MRI values (e.g. Segmentation, FA) from nifti to mesh (using itk and  .stl, .vtk or .xml mesh)')
     
-    parser.add_argument('-m', '--inputmesh', help='Path to input FEniCS readable formal .xml mesh)', type=str, required=False, 
-                        default='./data/21GW/dhcp21GW_728Ktets.xml')         
+    parser.add_argument('-m', '--inputmesh', help='Path to input FEniCS readable formal .xml mesh)', type=str, required=True, 
+                        default='./data/brainmesh.xml')         
 
-    parser.add_argument('-niis', '--seriesofniftis', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=False, 
+    parser.add_argument('-niis', '--seriesofniftis', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=True, 
                         default={ 
                                  
                                  "T2":'./fetal_database/structural/t2-t21.00.nii.gz',
@@ -84,11 +84,11 @@ if __name__ == '__main__':
     parser.add_argument('-im', '--interpolationmode', help='Interpolation mode (nearest_neighbor; linear)', type=str, required=False, 
                         default='nearest_neighbor')
     
-    parser.add_argument('-of', '--outputfolder', help='Path to output folder where to write mesh + loaded nifti values)', type=str, required=False, 
+    parser.add_argument('-of', '--outputfolder', help='Path to output folder where to write mesh + loaded nifti values)', type=str, required=True, 
                         default='./MRI_driven_parameters/meshes_with_nodal_values/')
     
-    parser.add_argument('-ofn', '--outputfilename', help='Output file name (.xdmf; .vtk))', type=str, required=False, 
-                        default='21GW/meshXML145Ktets_MRIniivalues_NearestNeighbor_21GW_homogeneizeCortexLabels.vtk') # if .xml inputmesh --> '.xdmf'; if .stl inputmesh --> '.vtk'
+    parser.add_argument('-ofn', '--outputfilename', help='Output file name (.xdmf; .vtk))', type=str, required=True, 
+                        default='brainmesh_loaded_with_21GW_MRI_data.vtk') # if .xml; .xdmf inputmesh --> '.xdmf'; if .stl inputmesh --> '.vtk'
     
     args = parser.parse_args()
 
@@ -97,11 +97,18 @@ if __name__ == '__main__':
     ###################
     inputmesh_format = args.inputmesh.split('.')[-1]
     
-    if inputmesh_format == 'xml':
+    if inputmesh_format == 'xml' or inputmesh_format == 'xdmf':
         
     	# Input mesh
     	############
-        meshFEniCS = fenics.Mesh(args.inputmesh)
+        if inputmesh_format == 'xml':
+            meshFEniCS = fenics.Mesh(args.inputmesh)
+            
+        elif inputmesh_format == 'xdmf':
+            mesh = fenics.Mesh()
+            with fenics.XDMFFile(args.inputmesh) as infile:
+                infile.read(mesh)
+                
         """
         vedo.dolfin.plot(mesh, 
                         mode='mesh', 

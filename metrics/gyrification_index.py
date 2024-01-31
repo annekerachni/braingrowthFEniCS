@@ -1,7 +1,5 @@
-import fenics
-import meshio
 import numpy as np
-import matplotlib.pyplot as plt
+# source: https://github.com/rousseau/BrainGrowth/blob/master/impact_mesh_density_GI.py
 
 def rescale_folded_mesh_to_initial_smooth_mesh(initial_smooth_mesh, folded_mesh):
     """scaling down the folded mesh to the size of the initial smooth mesh, taken as the convex hull"""

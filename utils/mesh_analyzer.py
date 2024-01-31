@@ -2,19 +2,16 @@ import fenics
 import vedo.dolfin
 import matplotlib.pyplot as plt
 import argparse
-
 import os, sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
 
+sys.path.append(os.path.dirname(sys.path[0]))  # braingrowthFEniCS
 from FEM_biomechanical_model import preprocessing
 
 if __name__ == '__main__':
-    # './data/gmsh/ellipsoid_1M27Ktets/ellipsoid_algoDelaunay1_tets002.xml'
-    # './data/pygalmesh/mesh_PYGALMESH_vol_tets005.xml'
+
     parser = argparse.ArgumentParser(description='Visualize .xml input mesh and Compute characteristics')
 
-    parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=False, 
+    parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=True, 
                         default='./data/brainmesh.xml')
 
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=True)

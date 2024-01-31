@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Mask brain MRI nifti with selected parcels from provided segmentation')
     
-    parser.add_argument('-i', '--inputdata', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=False, 
+    parser.add_argument('-i', '--inputdata', help='Path to the orginal nifti file (.nii) + Path to the associated segmentation file (.nii)', type=json.loads, required=True, 
                         default={ 
                                  
                                  "nifti_T1":'./fetal_database/structural/t1-t21.00.nii.gz',

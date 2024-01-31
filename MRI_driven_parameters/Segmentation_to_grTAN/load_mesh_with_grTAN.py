@@ -1,28 +1,28 @@
 import fenics
 import argparse
 import json
-import meshio
-from FEM_biomechanical_model import preprocessing
 import matplotlib.pyplot as plt
-import numpy as np
+import os, sys
+
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0]))) 
+
+from FEM_biomechanical_model import preprocessing
 
 # Growth ponderation & associated Cortex/Core layers from Segmentation labels
 #############################################################################
-def bilayer_tangential_growth_ponderation_from_SegmentationLabels(grTAN, vertex2dofs_S, path_inputmeshloaded_with_SegLabels_VTK):
+def bilayer_tangential_growth_ponderation_from_SegmentationLabels(grTAN, vertex2dofs_S, mesh_meshio_with_Seg):
     """
     Args:
     grTAN: fenics.Function(S)
-    tGW: "21GW"
     t_simu: 0.
-    path_inputmeshloaded_with_SegLabels_VTK: .vtk mesh file loaded with segmentation labels, collected from MRI data
+    mesh_meshio_with_Seg: .vtk mesh file loaded with segmentation labels, collected from MRI data
     vertex2dofs_S: vertex --> scalar FEniCS DOF
     
     Returns: grTAN FEniCS scalar FEM function (1. in Cortex and 0. in Core)
     """
     
     # Defining gr from Cortex segmentation label
-    mesh_loaded_with_Seg = meshio.read(path_inputmeshloaded_with_SegLabels_VTK)
-    seg = mesh_loaded_with_Seg.point_data["Segmentation"] # nodal array 
+    seg = mesh_meshio_with_Seg.point_data["Segmentation"] # nodal array 
     
     for vertex, scalarDOF in enumerate(vertex2dofs_S):
         if seg[vertex] == 3. or seg[vertex] == 4. : # labels for Cortex from fetal dhcp atlas. See https://gin.g-node.org/kcl_cdb/fetal_brain_mri_atlas/src/master/ + script './utils/nifti_mesh/niftitomesh/generate_mesh_from_nifti/mask_nifti_with_segmentation_parcels.py'
@@ -47,15 +47,18 @@ def bilayer_tangential_growth_ponderation_from_SegmentationLabels(grTAN, vertex2
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth elastodynamics 3D model')
+    parser = argparse.ArgumentParser(description='Get growth zones ponderation (FEniCS-readable format) from MRI Segmentation data (vtk)')
     
-    parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=False, 
-                        default='./data/dhcp_mesh.xml') 
+    parser.add_argument('-i', '--input', help='Input mesh path (.xml, .xdmf)', type=str, required=True, 
+                        default='./data/brainmesh.xdmf') 
                         
     parser.add_argument('-n', '--normalization', help='Is normalization of the input mesh required? (required by braingrowthFEniCS)', type=bool, required=False, default=True)
 
-    parser.add_argument('-seg', '--segmentationlabels', help='Path to the mesh loaded with Segmentation labels onto nodes (.vtk)', type=json.loads, required=False, 
-    default={"21GW": './niftitomesh/transfer_niftivalues_to_meshnodes/results/21GW/MRIniivalues_NearestNeighbor_21GW_homogeneizeCortexLabels.vtk'})
+    parser.add_argument('-seg', '--segmentationlabels', help='Path to the mesh loaded with Segmentation labels onto nodes (.vtk)', type=json.loads, required=True, 
+    default={"21GW": './MRI_driven_parameters/meshes_with_nodal_values/brainmesh_loaded_with_21GWMRIvalues.vtk'})
+    
+    parser.add_argument('-o', '--output', help='Path to output folder', type=str, required=True, 
+                        default='./MRI_driven_parameters/meshes_with_nodal_values/brainmesh_loaded_with_grTAN_from_Segmentation.xdmf') 
     
     args = parser.parse_args() 
     
@@ -67,7 +70,16 @@ if __name__ == '__main__':
     # mesh & boundary mesh
     print("\nimporting mesh...")
     inputmesh_path = args.input
-    mesh = fenics.Mesh(inputmesh_path)
+    inputmesh_format = inputmesh_path.split('.')[-1]
+
+    if inputmesh_format == "xml":
+        mesh = fenics.Mesh(inputmesh_path)
+
+    elif inputmesh_format == "xdmf":
+        mesh = fenics.Mesh()
+        with fenics.XDMFFile(inputmesh_path) as infile:
+            infile.read(mesh)
+            
     bmesh = fenics.BoundaryMesh(mesh, "exterior") # bmesh at t=0.0 (cortex envelop)
 
     if args.visualization == True:
@@ -118,14 +130,13 @@ if __name__ == '__main__':
     # FEM functions
     grTAN = fenics.Function(S, name="grTAN")  
     
-    t_simu = 0. # simulation time and corresponding real time
-    outputfolderpath = './simulation_braingrowth/results/'
+    t_simu, tGW = 0., "21GW" # simulation time and corresponding real time
     
     # Get Segmentation labels from .vtk
     path_inputmeshloaded_with_SegLabels_VTK = args.segmentationlabels 
     
     # Build grTAN (growth ponderation function, defining two layers. Allocating the followinf lables: Cortex-->1., Core-->0.)
-    grTAN = bilayer_tangential_growth_ponderation_from_SegmentationLabels(grTAN, vertex2dofs_S, path_inputmeshloaded_with_SegLabels_VTK)
+    grTAN = bilayer_tangential_growth_ponderation_from_SegmentationLabels(grTAN, vertex2dofs_S, tGW, path_inputmeshloaded_with_SegLabels_VTK)
     
     # Export tangential growth ponderation 
     grTAN_file_XDMF = fenics.XDMFFile(args.output + "grTAN_{}.xdmf".format(t_simu))

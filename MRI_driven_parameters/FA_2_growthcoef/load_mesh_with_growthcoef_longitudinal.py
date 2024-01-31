@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0]))) 
 
-from simulation_braingrowth.MRI_driven_parameters.FA import FA_2_growth_laws
+from MRI_driven_parameters.FA_2_growthcoef import FA_to_growth_law
 
 # Tangential growth from FA
 ###########################
@@ -39,7 +41,7 @@ def tangential_growth_coef_from_FA(linear_coef, alphaTAN, vertex2dofs_S, normali
 
     # Defining tangential growth coefficient 'alphaTAN' in correlation to FA nodal value. (FA ++ => neuronal maturation -- => neuron matures => tangential growth ++)
     for vertex, scalarDOF in enumerate(vertex2dofs_S):
-        alphaTAN.vector()[scalarDOF] = FA_2_growth_laws.FA_to_tangential_growth_law_linearrelationship(linear_coef, normalized_fa.vector()[scalarDOF] ) # FA should be a float between 0. and 1. => normalized_fa = fa/np.max(fa)  + growth is a linear function of FA. (here we test alphaTAN = 5*FA)
+        alphaTAN.vector()[scalarDOF] = FA_to_growth_law.FA_to_tangential_growth_law_linearrelationship(linear_coef, normalized_fa.vector()[scalarDOF] ) # FA should be a float between 0. and 1. => normalized_fa = fa/np.max(fa)  + growth is a linear function of FA. (here we test alphaTAN = 5*FA)
         #alphaTAN.vector()[scalarDOF] = FA_2_growth_laws.FA_to_tangential_growth_law_gompertz(linear_coef, normalized_fa.vector()[scalarDOF])
         #alphaTAN.vector()[scalarDOF] = FA_2_growth_laws.FA_to_tangential_growth_law_exponential(linear_coef, normalized_fa.vector()[scalarDOF])
         

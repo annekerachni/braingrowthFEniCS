@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     # Parameters
     ############
-    meshFEniCS = fenics.Mesh('./data/dhcp_mesh.xml')
+    meshFEniCS = fenics.Mesh('./data/brainmesh.xdmf')
     
     T0 = 0.
     Tmax = 1.
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     
     # Export dictionnary to csv
     ###########################
-    outfilepath = './simulation_braingrowth/MRI_driven_parameters/FA/longitudinal_FA_values/FA_longitudinal_homogeneousNodalValue.csv'
+    outfilepath = './MRI_driven_parameters/meshes_with_nodal_values/artificial_FA/longitudinal_FA_values/brainmesh_loaded_with_artificial_FAt_homogeneousNodalValue.csv'
     
     for t, fa in FA_temporal_values.items():
         FA_temporal_values[t] = list(FA_temporal_values[t])
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     # Parameters
     ############
-    meshFEniCS = fenics.Mesh('./data/dhcp_mesh.xml')
+    meshFEniCS = fenics.Mesh('./data/brainmesh.xdmf')
     
     T0 = 0.
     Tmax = 1.
@@ -109,12 +109,12 @@ if __name__ == '__main__':
     
     # Load Segmentation labels and FA from MRI nifti at T0 (e.g. 21GW)
     T0_GW = 21
-    FA_nifti_file_path_T0GW = './fetal_database/diffusion/fa-t{}.00.nii.gz'.format(T0_GW)
+    FA_nifti_file_path_T0GW = './fetal_database/diffusion/fa-t{}.00.nii.gz'.format(T0_GW) 
     #Segmentation_nifti_file_path_T0GW = '/home/latim/BrainGrowth_database/dhcp_fetal_atlas/fetal_brain_mri_atlas/parcellations/tissue-t{}.00_dhcp-19.nii.gz'.format(T0_GW)
 
     # transfer Labels and FA values onto initial mesh
-    import sys
-    sys.path.append(".")
+    import os, sys
+    sys.path.append(os.path.join(sys.path[0]))
     
     from niftitomesh.niftivalues2meshnodes import transfer_niftivalues_to_meshnodes_in_simulation 
     
@@ -122,11 +122,12 @@ if __name__ == '__main__':
                                                                                           FA_nifti_file_path_T0GW, 
                                                                                           interpolation_mode='nearest_neighbor') 
     
-    mesh_meshio.write('./simulation_braingrowth/MRI_driven_parameters/FA/longitudinal_FA_values/' + "mesh_FAvalues_{}".format(T0) + '.vtk') 
+    mesh_meshio.write('./MRI_driven_parameters/meshes_with_nodal_values/artificial_FA/longitudinal_FA_values/' + 
+                      "brainmesh_loaded_with_FA_from_{}GWFAatlas".format(T0) + '.vtk') 
     
     
     # Get nodal FA 
-    from simulation_braingrowth.MRI_driven_parameters.FA import FA_to_growth_longitudinal 
+    from MRI_driven_parameters.FA import FA_to_growth_longitudinal 
     from FEM_biomechanical_model import mappings
     
     S = fenics.FunctionSpace(meshFEniCS, "CG", 1) 
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     
     # Export dictionnary to csv
     ###########################
-    outfilepath = './simulation_braingrowth/MRI_driven_parameters/FA/longitudinal_FA_values/FA_longitudinal_heterogeneousNodalValue_from21GWFAatlas.csv'
+    outfilepath = './MRI_driven_parameters/meshes_with_nodal_values/artificial_FA/longitudinal_FA_values/brainmesh_loaded_with_artificial_FAt_heterogeneousNodalValue_from21GWFAatlas.csv'
     
     for t, fa in FA_temporal_values.items():
         FA_temporal_values[t] = list(FA_temporal_values[t])

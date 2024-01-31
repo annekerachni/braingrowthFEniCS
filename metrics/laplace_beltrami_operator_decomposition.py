@@ -1,4 +1,4 @@
-"""credits: Saad Jbabdi --> https://colab.research.google.com/drive/1MrkHAenYXn7EXrwKcwVyMT6KbcjrXHMm#scrollTo=bqw4dbI_C10-"""
+# source code: Saad Jbabdi --> https://colab.research.google.com/drive/1MrkHAenYXn7EXrwKcwVyMT6KbcjrXHMm#scrollTo=bqw4dbI_C10-
 
 import numpy as np
 import nibabel as nib
@@ -405,12 +405,11 @@ def analyze_mesh_folding_pattern(Geometries, num_modes, visualization_mode):
 if __name__ == '__main__':
     
     import argparse
-    import os
+    import os, sys
     
-    import sys
-    sys.path.append(".")
+    sys.path.append(os.path.dirname(sys.path[0])) 
     
-    from utils.converters import convert_stl_to_gii
+    from utils.converters import convert_meshformats
 
     # Convert the folded mesh at time of interest from .xdmf into .stl:
     # -----------------------------------------------------------------
@@ -444,6 +443,9 @@ if __name__ == '__main__':
     parser.add_argument('-nm', '--numberofeigenmodes', help='Number of eigen modes on which to decompose the curvature of the folded sphere mesh', type=int, required=False, 
     default=1500) 
     
+    parser.add_argument('-o', '--output', help='Path to output folder', type=str, required=True, 
+                        default='results')
+    
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')
 
@@ -458,10 +460,8 @@ if __name__ == '__main__':
     # ----------------------------------
     initial_mesh_stl = args.initialspheresurface
 
-    triangle_mesh_0, faces_0, vertices_0 = convert_stl_to_gii.read_stl_mesh(initial_mesh_stl)
-
     initial_mesh_gii = initial_mesh_stl.split('.stl')[0] + ".gii"
-    convert_stl_to_gii.write_gii_mesh(vertices_0, faces_0, initial_mesh_gii)
+    convert_meshformats.stl_to_gii(initial_mesh_stl, initial_mesh_gii)
     
     # reference smooth mesh path and folded mesh path (after braingrowthFEniCS simulation)
     # ------------------------------------------------------------------------------------
@@ -474,10 +474,8 @@ if __name__ == '__main__':
         # --------------------------------------------
         folded_mesh_stl = './simulation_spheregrowth/results/growth_simulation_nsteps{}_time{}.stl'.format(args.step, str(numericaltime).split('.')[0] + "_" + str(numericaltime).split('.')[-1])
         
-        triangle_mesh, faces, vertices = convert_stl_to_gii.read_stl_mesh(folded_mesh_stl)
-
         folded_mesh_gii = folded_mesh_stl.split('.stl')[0] + ".gii"
-        convert_stl_to_gii.write_gii_mesh(vertices, faces, folded_mesh_gii)
+        convert_meshformats.stl_to_gii(folded_mesh_stl, folded_mesh_gii)
 
         # reference smooth mesh path and folded mesh path (after braingrowthFEniCS simulation)
         # ------------------------------------------------------------------------------------
@@ -495,7 +493,7 @@ if __name__ == '__main__':
         
         # export .txt data
         # ----------------        
-        output_folder_path = './simulation_spheregrowth/results/analytics/'
+        output_folder_path = args.output
         filetext_name = 'foldedsphere_nsteps{}_curvature_LBOanalysis_time{}.txt'.format(args.step, str(numericaltime).split('.')[0] + "_" + str(numericaltime).split('.')[-1])
         filetext_path = os.path.join(output_folder_path, filetext_name)
         
