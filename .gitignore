@@ -1,0 +1,9 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pyre type checker
+.pyre/
+src/.DS_Store
+.DS_Store
