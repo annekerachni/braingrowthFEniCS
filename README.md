@@ -60,7 +60,7 @@
 - Create a virtual env with anaconda to use FEniCS: 
   - `conda create -n fenicsvenv`
   - `conda install -c conda-forge fenics`
-- Then install dedicated libraries: 'pip install -r requirements.txt' 
+- Then install dedicated libraries: `pip install -r requirements.txt`
 - Simulations can be launched on sphere geometries via `main_sphere_growth.py` or on brain ones via `main_brain_growth.py`
 - e.g. launch command: `python main_sphere_growth.py -i sphere.xdmf  -p ‘{"H0": 0.03, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 0.5, "alphaTAN": 3.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 1.0, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}’ -o results`
 
