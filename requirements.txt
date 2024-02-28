@@ -1,15 +1,12 @@
-gmsh==4.10.5
-pygalmesh == 0.10.7
-meshio==5.3.4
-vedo==2022.3.0 
-matplotlib==3.5.3
-numba==0.56.4
-sympy==1.12
-tqdm==4.65.0
-numpy==1.23.1
-pyvista==0.37.0
-nibabel==5.0.1
-fslpy==3.13.2
-slam
-slamviz
+gmsh
+meshio
+vedo 
+matplotlib
+numba
+sympy
+tqdm
+numpy
+pyvista
+nibabel
+scipy
 
