@@ -330,49 +330,49 @@ if __name__ == '__main__':
     # Export input parameters to FEniCS scalar functions (.xml) --> for conversion into C++
     # -------------------------------------------------------------------------------------
     """
-    H0 = fenics.Function(SystemError)
-    H0.vector()[:] = args.parameters["H0"]
-    fenics.File(os.path.join(args.output, "input_parameters/H0.xml")) << H0
+    H0_ip = fenics.Function(S)
+    H0_ip.vector()[:] = args.parameters["H0"]
+    fenics.File(os.path.join(args.output, "input_parameters/H0.xml")) << H0_ip
     
-    K = fenics.Function(S)
-    K.vector()[:] = args.parameters["K"]
-    fenics.File(os.path.join(args.output, "input_parameters/K.xml")) << K
+    K_ip = fenics.Function(S)
+    K_ip.vector()[:] = args.parameters["K"]
+    fenics.File(os.path.join(args.output, "input_parameters/K.xml")) << K_ip
     
-    mu0 = fenics.Function(S)
-    mu0.vector()[:] = mu
-    fenics.File(os.path.join(args.output, "input_parameters/mu0.xml")) << mu0
+    mu0_ip = fenics.Function(S)
+    mu0_ip.vector()[:] = mu.vector()[:]
+    fenics.File(os.path.join(args.output, "input_parameters/mu0.xml")) << mu0_ip
     
-    rho = fenics.Function(S, name="rho")
-    rho.vector()[:] = args.parameters["rho"]
-    fenics.File(os.path.join(args.output, "input_parameters/rho.xml")) << rho
+    rho_ip = fenics.Function(S, name="rho")
+    rho_ip.vector()[:] = args.parameters["rho"]
+    fenics.File(os.path.join(args.output, "input_parameters/rho.xml")) << rho_ip
     
-    damping_coef = fenics.Function(S)
-    damping_coef.vector()[:] = args.parameters["damping_coef"]
-    fenics.File(os.path.join(args.output, "input_parameters/damping_coef.xml")) << damping_coef
+    damping_coef_ip = fenics.Function(S)
+    damping_coef_ip.vector()[:] = args.parameters["damping_coef"]
+    fenics.File(os.path.join(args.output, "input_parameters/damping_coef.xml")) << damping_coef_ip
     
-    alphaTAN = fenics.Function(S)
-    alphaTAN.vector()[:] = args.parameters["alphaTAN"]
-    fenics.File(os.path.join(args.output, "input_parameters/alphaTAN.xml")) << alphaTAN
+    alphaTAN_ip = fenics.Function(S)
+    alphaTAN_ip.vector()[:] = args.parameters["alphaTAN"]
+    fenics.File(os.path.join(args.output, "input_parameters/alphaTAN.xml")) << alphaTAN_ip
     
-    grTAN = fenics.Function(S)
-    grTAN.vector()[:] = args.parameters["grTAN"]
-    fenics.File(os.path.join(args.output, "input_parameters/grTAN.xml")) << grTAN
+    grTAN_ip = fenics.Function(S)
+    grTAN_ip.vector()[:] = args.parameters["grTAN"]
+    fenics.File(os.path.join(args.output, "input_parameters/grTAN.xml")) << grTAN_ip
     
-    alphaRAD = fenics.Function(S)
-    alphaRAD.vector()[:] = args.parameters["alphaRAD"]
-    fenics.File(os.path.join(args.output, "input_parameters/alphaRAD.xml")) << alphaRAD
+    alphaRAD_ip = fenics.Function(S)
+    alphaRAD_ip.vector()[:] = args.parameters["alphaRAD"]
+    fenics.File(os.path.join(args.output, "input_parameters/alphaRAD.xml")) << alphaRAD_ip
     
-    grRAD = fenics.Function(S)
-    grRAD.vector()[:] = args.parameters["grRAD"]
-    fenics.File(os.path.join(args.output, "input_parameters/grRAD.xml")) << grRAD
+    grRAD_ip = fenics.Function(S)
+    grRAD_ip.vector()[:] = args.parameters["grRAD"]
+    fenics.File(os.path.join(args.output, "input_parameters/grRAD.xml")) << grRAD_ip
     
-    alphaM = fenics.Function(S)
-    alphaM.vector()[:] = args.parameters["alphaM"]
-    fenics.File(os.path.join(args.output, "input_parameters/alphaM.xml")) << alphaM
+    alphaM_ip = fenics.Function(S)
+    alphaM_ip.vector()[:] = args.parameters["alphaM"]
+    fenics.File(os.path.join(args.output, "input_parameters/alphaM.xml")) << alphaM_ip
     
-    alphaF = fenics.Function(S)
-    alphaF.vector()[:] = args.parameters["alphaF"]
-    fenics.File(os.path.join(args.output, "input_parameters/alphaF.xml")) << alphaF
+    alphaF_ip = fenics.Function(S)
+    alphaF_ip.vector()[:] = args.parameters["alphaF"]
+    fenics.File(os.path.join(args.output, "input_parameters/alphaF.xml")) << alphaF_ip
     """
     
     # external forces
