@@ -173,27 +173,36 @@ if __name__ == '__main__':
 
     # Input parameters
     ##################
-    # Geometry 
     h = fenics.Expression('H0 + 0.01*t', H0=args.parameters["H0"], t=0.0, degree=0)
     gdim=3
+    fenics.File(os.path.join(args.output, "input_parameters_H0.xml")) << h
 
     # Elastic parameters
     K  = fenics.Constant(args.parameters["K"])
     muCortex = fenics.Constant(args.parameters["muCortex"])
     muCore = fenics.Constant(args.parameters["muCore"])
+    fenics.File(os.path.join(args.output, "input_parameters_K.xml")) << K
+    fenics.File(os.path.join(args.output, "input_parameters_muCortex.xml")) << muCortex
+    fenics.File(os.path.join(args.output, "input_parameters_muCore.xml")) << muCore
 
     # Mass density
     rho = fenics.Constant(args.parameters["rho"])
+    fenics.File(os.path.join(args.output, "input_parameters_rho.xml")) << rho
 
     # Damping coefficients
     damping_coef = fenics.Constant(args.parameters["damping_coef"])
+    fenics.File(os.path.join(args.output, "input_parameters_damping_coef.xml")) << damping_coef
 
     # Growth parameters
     alphaTAN = fenics.Constant(args.parameters["alphaTAN"])
     grTAN = fenics.Constant(args.parameters["grTAN"])
+    fenics.File(os.path.join(args.output, "input_parameters_alphaTAN.xml")) << alphaTAN
+    fenics.File(os.path.join(args.output, "input_parameters_grTAN.xml")) << grTAN
 
     alphaRAD = fenics.Constant(args.parameters["alphaRAD"])
     grRAD = fenics.Constant(args.parameters["grRAD"])
+    fenics.File(os.path.join(args.output, "input_parameters_alphaTAN.xml")) << alphaRAD
+    fenics.File(os.path.join(args.output, "input_parameters_grTAN.xml")) << grRAD
 
 
     # Time integration
@@ -201,6 +210,8 @@ if __name__ == '__main__':
     # Generalized-alpha method parameters
     alphaM = fenics.Constant(args.parameters["alphaM"])
     alphaF = fenics.Constant(args.parameters["alphaF"])
+    fenics.File(os.path.join(args.output, "input_parameters_alphaM.xml")) << alphaM
+    fenics.File(os.path.join(args.output, "input_parameters_alphaF.xml")) << alphaF
     gamma  = fenics.Constant( 0.5 + alphaF - alphaM )
     beta   = fenics.Constant( 0.25 * (gamma + 0.5)**2 )
 
@@ -232,28 +243,44 @@ if __name__ == '__main__':
 
     # Scalar functions of V
     H = fenics.Function(S, name="H") 
+    fenics.File(os.path.join(args.output, "scalar_function/H.xml")) << H
+    
     d2s = fenics.Function(S, name="d2s")
+    fenics.File(os.path.join(args.output, "scalar_function/d2s.xml")) << d2s
+    
     #gr = fenics.Function(S, name="gr") 
     gm = fenics.Function(S, name="gm") 
     mu = fenics.Function(S, name="mu") 
+    fenics.File(os.path.join(args.output, "scalar_function/gm.xml")) << gm
+    fenics.File(os.path.join(args.output, "scalar_function/mu.xml")) << mu
 
     dg_TAN = fenics.Function(S, name="dgTAN")
     dg_RAD = fenics.Function(S, name="dgRAD") 
+    fenics.File(os.path.join(args.output, "scalar_function/dgTAN.xml")) << dg_TAN
+    fenics.File(os.path.join(args.output, "scalar_function/dgRAD.xml")) << dg_RAD
+    
 
     # Vector functions of V
     u = fenics.Function(V, name="Displacement") # Trial function. Current (unknown) displacement
     v_test = fenics.TestFunction(V) # Test function
+    fenics.File(os.path.join(args.output, "vector_functions/unknown_u.xml")) << u
+    fenics.File(os.path.join(args.output, "vector_functions/v_test.xml")) << v_test
 
     u_old = fenics.Function(V) # Fields from previous time step (displacement, velocity, acceleration)
     v_old = fenics.Function(V)
     a_old = fenics.Function(V)
+    fenics.File(os.path.join(args.output, "vector_functions/u_old.xml")) << u_old
+    fenics.File(os.path.join(args.output, "vector_functions/v_old.xml")) << v_old
+    fenics.File(os.path.join(args.output, "vector_functions/a_old.xml")) << a_old
 
     BoundaryMesh_Nt = fenics.Function(V, name="BoundaryMesh_Nt")
     Mesh_Nt = fenics.Function(V, name="Mesh_Nt")
+    fenics.File(os.path.join(args.output, "vector_functions/BoundaryMesh_Nt.xml")) << BoundaryMesh_Nt
+    fenics.File(os.path.join(args.output, "vector_functions/Mesh_Nt.xml")) << Mesh_Nt
 
     # Vector functions of Vtensor
     Fg_T = fenics.Function(Vtensor, name="Fg")
-
+    fenics.File(os.path.join(args.output, "tensor_functions/Fg_T.xml")) << Fg_T
 
     # Mappings
     ##########
