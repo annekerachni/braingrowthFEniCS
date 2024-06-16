@@ -31,19 +31,19 @@
 ## Simulation 
 #### Input parameters:
 - Brain geometry:
-  - *H0*: cortical thickness at t0 [mm]
+  - *H0*: cortical thickness at t0 [m]
  
 - Brain material:
-  - *K*: bulk modulus of the brain material [kPa]
-  - *muCortex*, *muCore*: shear modulus of Cortex, resp. inner layers of the brain [kPa]
+  - *K*: bulk modulus of the brain material [Pa]
+  - *muCortex*, *muCore*: shear modulus of Cortex, resp. inner layers of the brain [Pa]
 
 - Motion:
-  - *rho*: mass density of the brain material (supposed constant) [mm/kg⁻¹]
-  - *damping_coef*:  ratio for elastic wave damping, standing for energy dissipation [-] 
+  - *rho*: mass density of the brain material (supposed constant) [kg/m⁻³]
+  - *damping_coef*:  factor for elastic wave damping, standing for energy dissipation [kg.m⁻³.s⁻¹] 
  
 - Growth:
-  - *alphaTAN*: tangential growth coefficient [-]
-  - *alphaRAD*: radial growth coefficient [-]
+  - *alphaTAN*: tangential growth coefficient [s⁻¹]
+  - *alphaRAD*: radial growth coefficient [s⁻¹]
   - *grTAN*: weigth for tangential growth [-]
   - *grRAD*: weigth for radial growth [-]
 
@@ -51,8 +51,8 @@
   - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: $\alpha_{M}=0.2$, $\alpha_{F}=0.4$; Newmark-β method: $\alpha_{M}=0.$, $\alpha_{F}=0.$) 
 
 - Simulation:
-  - *T0*: initial numerical time, when mesh is smooth.
-  - *Tmax*: final numerical time 
+  - *T0*: initial numerical time, when mesh is smooth [s]
+  - *Tmax*: final numerical time [s]
   - *Nsteps*: Number of steps 
  
 
@@ -62,7 +62,6 @@
   - `conda install -c conda-forge fenics` (fenics==2019.1.0)
 - Then install dedicated libraries: `pip install -r requirements.txt`
 - Simulations can be launched on sphere geometries via `main_sphere_growth.py` or on brain ones via `main_brain_growth.py`
-- e.g. launch command: `python main_sphere_growth.py -i sphere.xdmf  -p ‘{"H0": 0.03, "K": 100.0, "muCortex": 20.0, "muCore": 1.0, "rho": 0.01, "damping_coef": 0.5, "alphaTAN": 3.0, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, "alphaM": 0.2, "alphaF": 0.4, "T0": 0.0, "Tmax": 1.0, "Nsteps": 100, "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}’ -o results`
 
 ## References
 - T. Tallinen et al., On the growth and form of cortical convolutions. Nature Physics, 12(6):588–593, 2016 
