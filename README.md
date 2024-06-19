@@ -5,19 +5,26 @@
 
 ![pipeline](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/b3fea58f-2579-4bf0-99ee-1fdcecfd5d1d)
 
-- The biomechanical model `FEM_biomechanical_model` is developed as a modular framework with adjustable components (input mesh and biophysical features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
+- The biomechanical model `FEM_biomechanical_model` (resp. `FEM_biomechanical_model_quasistatic`) is developed as a modular framework with adjustable components (2D or 3D geometries; phenomenological, biophysical or partially MRI-based features; growth tensor; constitutive model of the material; variational formulation of the non-linear mechanical problem; contact mechanics). The hypothesis used in the provided version are presented below.
   
-- The whole simulation pipeline relies on open source tools such as 3D Slicer, Meshlab, Netgen and FEniCS and uses `niftitomesh`, `metrics`, `utils`
+- The whole simulation pipeline relies on open source tools such as 3D Slicer, Meshlab, Netgen, FEniCS and slam (https://github.com/gauzias/slam) and uses `niftitomesh`, `metrics`, `utils`, `MRI_driven_parameters`.
 
 ## Biomechanical model
 #### Brain growth mechanics:
-- problem:
-  - balance of the linear momentum &#8594; damped elastodynamics PDE
-  - kinematics: $F = F^e.F^g$ (multiplicative decomposition of the deformation into elastic and growth deformations), with $F^g$ tangential and differential.
+- growth induced deformations:
+  - only Cortex grows
+  - growth tensor $F^g$: tangential and adaptative
+  - tangential growth ratio *alphaTAN*: homogeneous; MRI-based 
+  - growth kinetics: linear
+
+- growth kinematics: $F = F^e.F^g$ (multiplicative decomposition of the deformation into elastic and growth deformations)
+
 - constitutive model: Neo-Hookean
-- boundary conditions: traction-free (Neumann) + contact
-- growth kinetics: linear and homogeneous
-- tangential growth tensor
+  
+- problem:
+  - balance of the linear momentum &#8594; damped elastodynamics PDE or quasistatic ODE
+  - Lagrangian; total Piola-Kirchhoff I stress
+  - boundary conditions: traction-free (Neumann); interhemisphere fixed (Dirichlet); contact (for phenomenological dynamic case)
 
 ![input_parameters](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/a78adb94-2124-4d9e-999b-ab49c2702268)
 
@@ -25,8 +32,8 @@
 - Discretization of the spatial domain with Finite Element Method (Lagrange, degree 1)
 - Solver 
   - linearization method: Newton-Raphson
-  - lienar solver + preconditioner : ‘gmres’ + ‘sor’ 
-- Temporal integration method : generalized-alpha method
+  - lienar solver + preconditioner : ‘gmres’ + ‘sor’ (for 3D)
+- Temporal integration method : generalized-alpha method (dynamic case)
 
 ## Simulation 
 #### Input parameters:
@@ -36,10 +43,6 @@
 - Brain material:
   - *K*: bulk modulus of the brain material [Pa]
   - *muCortex*, *muCore*: shear modulus of Cortex, resp. inner layers of the brain [Pa]
-
-- Motion:
-  - *rho*: mass density of the brain material (supposed constant) [kg/m⁻³]
-  - *damping_coef*:  factor for elastic wave damping, standing for energy dissipation [kg.m⁻³.s⁻¹] 
  
 - Growth:
   - *alphaTAN*: tangential growth coefficient [s⁻¹]
@@ -47,21 +50,25 @@
   - *grTAN*: weigth for tangential growth [-]
   - *grRAD*: weigth for radial growth [-]
 
-- time integration scheme for dynamical PDE: 
-  - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: $\alpha_{M}=0.2$, $\alpha_{F}=0.4$; Newmark-β method: $\alpha_{M}=0.$, $\alpha_{F}=0.$) 
-
 - Simulation:
   - *T0*: initial numerical time, when mesh is smooth [s]
   - *Tmax*: final numerical time [s]
-  - *Nsteps*: Number of steps 
+  - *Nsteps*: Number of steps
  
+#### Additional dynamic parameters:
+- Motion:
+  - *rho*: mass density of the brain material (supposed constant) [kg/m⁻³]
+  - *damping_coef*:  factor for elastic wave damping, standing for energy dissipation [kg.m⁻³.s⁻¹] 
+
+ - time integration scheme for dynamical PDE: 
+  - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: $\alpha_{M}=0.2$, $\alpha_{F}=0.4$; Newmark-β method: $\alpha_{M}=0.$, $\alpha_{F}=0.$) 
 
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: 
   - `conda create -n fenicsvenv`
   - `conda install -c conda-forge fenics` (fenics==2019.1.0)
 - Then install dedicated libraries: `pip install -r requirements.txt`
-- Simulations can be launched on sphere geometries via `main_sphere_growth.py` or on brain ones via `main_brain_growth.py`
+- Simulations can be launched within each simulation case in both `braingrowth_2D` or `braingrowth_3D` folders. e.g. `main_sphere_growth_Fgt.py`; `main_brain_growth_Fgt.py`; `main_halfbrain_notReoriented_Fgt_quasistatic_biophysical_DirichletZoneLargeBand.py`; `main_halfbrain_notReoriented_Fgt_quasistatic_biophysical_DirichletZoneLargeBand_FA_CortexDelineation.py`
 
 ## References
 - T. Tallinen et al., On the growth and form of cortical convolutions. Nature Physics, 12(6):588–593, 2016 
