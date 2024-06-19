@@ -61,7 +61,7 @@
   - *damping_coef*:  factor for elastic wave damping, standing for energy dissipation [kg.m⁻³.s⁻¹] 
 
  - time integration scheme for dynamical PDE: 
-  - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: $\alpha_{M}=0.2$, $\alpha_{F}=0.4$; Newmark-β method: $\alpha_{M}=0.$, $\alpha_{F}=0.$) 
+   - *alphaM*, *alphaF*: parameters that determine the type of scheme (generalized-α method: $\alpha_{M}=0.2$, $\alpha_{F}=0.4$; Newmark-β method: $\alpha_{M}=0.$, $\alpha_{F}=0.$) 
 
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: 
