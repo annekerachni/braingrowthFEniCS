@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 import os, sys
 sys.path.append(sys.path[0]) # Add sys.path[0]: ~/2DgrowthFEniCS/ from any local pathed
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0]))) 
 
 from utils.export_functions import export_XML_PVD_XDMF
 from FEM_biomechanical_model import mappings, differential_layers, projection, growth
