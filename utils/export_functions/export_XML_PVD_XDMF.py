@@ -14,7 +14,7 @@ def export_XMLfile(output_folderpath, name, mesh):
     return 
 
 def export_PVDfile(output_folderpath, name, geometry_entity):
-    path = os.path.join(output_folderpath, name, '.pvd')
+    path = os.path.join(output_folderpath, name + '.pvd')
     fenics.File(path).write(geometry_entity)
     print('{}.pvd was written'.format(name))
     return 

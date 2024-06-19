@@ -444,7 +444,7 @@ if __name__ == '__main__':
     default=1500) 
     
     parser.add_argument('-o', '--output', help='Path to output folder', type=str, required=True, 
-                        default='results')
+                        default='./results/')
     
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')

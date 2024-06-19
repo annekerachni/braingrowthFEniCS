@@ -5,7 +5,7 @@ from mpi4py import MPI
 import sys, os
 
 sys.path.append(os.path.dirname(sys.path[0])) # braingrowthFEniCS
-from FEM_biomechanical_model import preprocessing
+from FEM_biomechanical_model_quasistatic import preprocessing
 
 
 def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode):
@@ -49,7 +49,7 @@ def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode
     return
 
 
-def refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtree, min_mesh_spacing, refinement_width_coef): 
+def refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtree, mesh_spacing, refinement_width_coef): 
         """ 
         Refine mesh near the brain surface boundary.
         Refined width from boundary = refinement_width_coef * min_mesh_spacing (refinement_width_coef: number of time the minmeshspacing)
@@ -62,7 +62,7 @@ def refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtr
         for cell in fenics.cells(mesh_to_refine):
             p = cell.midpoint()
             _, distance = brainsurface_bmesh_bbtree.compute_closest_entity(p) # compute distance of p to boundingbox
-            if distance < refinement_width_coef * min_mesh_spacing: 
+            if distance < refinement_width_coef * mesh_spacing: 
                 cells_to_refine[cell] = True
 
         refined_mesh = fenics.refine(mesh_to_refine, cells_to_refine) 
@@ -85,14 +85,14 @@ if __name__ == '__main__':
     # ----------------------------   
     parser = argparse.ArgumentParser(description='Refine mesh near by surface boundary')
 
-    parser.add_argument('-i', '--inputmesh', help='Path to 3D mesh to refine (.xml, .xdmf)', type=str, required=True, 
-                        default='./data/sphere.xdmf') 
+    parser.add_argument('-i', '--inputmesh', help='Path to 3D mesh to refine (.xml, .xdmf)', type=str, required=False, 
+                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets.xdmf') 
     
     #parser.add_argument('-o', '--outputmesh', help='Path to output folder', type=str, required=True, 
     #                    default='./data/') 
 
     parser.add_argument('-rfc', '--refinementwidthcoef', help='refinement width coef (integer > 0)', type=int, required=False, 
-                        default=5)  
+                        default=15)  
     # if 0: no refinement 
     # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
     
@@ -131,9 +131,9 @@ if __name__ == '__main__':
 
     # refined mesh
     refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
-                                                                brainsurface_bmesh_bbtree, 
-                                                                min_mesh_spacing, 
-                                                                refinement_width_coef)
+                                                              brainsurface_bmesh_bbtree, 
+                                                              average_mesh_spacing, 
+                                                              refinement_width_coef)
     
     # generate XDMF refined mesh
     # --------------------------
@@ -142,11 +142,11 @@ if __name__ == '__main__':
     filename_without_format = filename.split('.')[0]
     
     if inputmesh_format == "xml":
-        output_mesh_path = os.path.join(direname, filename_without_format + "_refined.xml") 
+        output_mesh_path = os.path.join(direname, filename_without_format + "_refinedWidthCoef{}.xml".format(refinement_width_coef)) 
         fenics.File(output_mesh_path) << refined_FEniCSmesh
         
     elif inputmesh_format == 'xdmf':
-        output_mesh_path = os.path.join(direname, filename_without_format + "_refined.xdmf") 
+        output_mesh_path = os.path.join(direname, filename_without_format + "_refinedWidthCoef{}.xdmf".format(refinement_width_coef)) 
         with fenics.XDMFFile(MPI.COMM_WORLD, output_mesh_path) as xdmf:
             xdmf.write(refined_FEniCSmesh)
 

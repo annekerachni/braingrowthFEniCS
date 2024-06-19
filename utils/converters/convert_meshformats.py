@@ -92,6 +92,15 @@ def xml_to_xdmf(input_file_xml, output_file_xdmf):
 
 # Convert to .xml
 #################
+def xdmf_to_xml(input_file_xdmf, output_file_xml):
+    mesh = fenics.Mesh()
+    with fenics.XDMFFile(input_file_xdmf) as infile:
+        infile.read(mesh)
+            
+    meshio.write(output_file_xml, meshio.Mesh(points=mesh.coordinates(), cells={'tetra': mesh.cells()})) 
+
+    return
+
 def vtk_to_xml_xdmf(input_file_vtk, output_file_xml_xdmf): 
     """
     Args: mesh in VTK format
@@ -231,6 +240,16 @@ def xdmf_to_stl(input_file_xdmf, output_file_stl):
 
 # Convert to .vtk
 #################
+def gifti_to_vtk(input_file_gii, output_file_vtk):
+
+    surf_img = nib.load(input_file_gii)
+    coords = surf_img.agg_data('pointset')
+    faces = surf_img.agg_data('triangle')
+
+    meshio.write(output_file_vtk, meshio.Mesh(points=coords, cells=[("triangle", faces)]))
+
+    return
+
 def msh_to_vtk(input_file_msh, output_file_vtk): 
     """
     Args: 3D mesh in MSH format (Gmsh)
@@ -333,11 +352,11 @@ def stl_to_gii(input_file_stl, output_file_gii):
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser(description='Convert mesh formats to XML (FEniCS format)')
     
-    parser.add_argument('-i', '--input', help='Path to input mesh. Consider using following input formats depending on output format required: .msh, .mesh, .vtk, .stl -> .xml / .msh, .mesh, .vtk, .stl, .xml -> .xdmf / .msh, .mesh, .vtk, .xml, .xdmf -> . stl / .msh, .mesh, .xml, .xdmf -> .vtk / .stl -> .gii', type=str, required=True, 
-                        default='./data/brainmesh.mesh')  
+    parser.add_argument('-i', '--input', help='Path to input mesh. Consider using following input formats depending on output format required: .msh, .mesh, .vtk, .stl -> .xml / .msh, .mesh, .vtk, .stl, .xml -> .xdmf / .msh, .mesh, .vtk, .xml, .xdmf -> . stl / .msh, .mesh, .xml, .xdmf -> .vtk / .stl -> .gii', type=str, required=False, 
+                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets.mesh')  
     
-    parser.add_argument('-o', '--output', help='Path to output mesh. Possible output formats for each input format: \n.msh -> .xml, .xdmf, .stl / .mesh -> .xml, .xdmf, .stl / .stl -> .xml, .xdmf, .gii / .vtk -> .xml, .xdmf, .stl / .xml -> .xdmf, .stl / .xdmf -> .stl', type=str, required=True, 
-                        default='./data/brainmesh.xdmf') 
+    parser.add_argument('-o', '--output', help='Path to output mesh. Possible output formats for each input format: \n.msh -> .xml, .xdmf, .stl / .mesh -> .xml, .xdmf, .stl / .stl -> .xml, .xdmf, .gii / .vtk -> .xml, .xdmf, .stl / .xml -> .xdmf, .stl / .xdmf -> .stl', type=str, required=False, 
+                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets.xdmf') 
 
     args = parser.parse_args()
 
@@ -399,4 +418,6 @@ if __name__ == '__main__':
             xdmf_to_stl(input_file_path, output_file_path)
         elif outputmesh_format == 'vtk':
             xdmf_to_vtk(input_file_path, output_file_path)
+        elif outputmesh_format == 'xml':
+            xdmf_to_xml(input_file_path, output_file_path)
   

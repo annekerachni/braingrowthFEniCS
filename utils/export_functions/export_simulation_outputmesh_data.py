@@ -3,9 +3,9 @@ import meshio
 import numpy as np
 import os, sys
 
-sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))  # braingrowthFEniCS
+sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))  
 
-from FEM_biomechanical_model.preprocessing import compute_geometrical_characteristics, compute_center_of_gravity, compute_mesh_spacing
+from braingrowth_3D.phenomenological_dynamic_3D.FEM_biomechanical_model.preprocessing import compute_geometrical_characteristics, compute_center_of_gravity, compute_mesh_spacing
 from metrics import brain_volume, brain_external_area
 
 def export_resultmesh_data(output_folder_path,

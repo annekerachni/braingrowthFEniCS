@@ -5,22 +5,32 @@ import argparse
 import os, sys
 
 sys.path.append(os.path.dirname(sys.path[0]))  # braingrowthFEniCS
-from FEM_biomechanical_model import preprocessing
+from braingrowth_3D.phenomenological_dynamic_3D.FEM_biomechanical_model.preprocessing import preprocessing
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Visualize .xml input mesh and Compute characteristics')
+    parser = argparse.ArgumentParser(description='Visualize .xml or .xdmf input mesh and Compute characteristics')
 
-    parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=True, 
-                        default='./data/brainmesh.xml')
+    parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=False, 
+                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets_refinedWidthCoef15.xdmf')
 
-    parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=True)
+    parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
 
     args = parser.parse_args()
 
     # Get FEniCS input mesh object
     # ----------------------------
-    mesh0 = fenics.Mesh(args.inputmeshpath)
+    inputmesh_path = args.inputmeshpath
+    inputmesh_format = inputmesh_path.split('.')[-1]
+
+    if inputmesh_format == "xml":
+        mesh0 = fenics.Mesh(inputmesh_path)
+
+    elif inputmesh_format == "xdmf":
+        mesh0 = fenics.Mesh()
+        with fenics.XDMFFile(inputmesh_path) as infile:
+            infile.read(mesh0)
+            
     bmesh0 = fenics.BoundaryMesh(mesh0, "exterior") 
 
     # mesh characteristics
