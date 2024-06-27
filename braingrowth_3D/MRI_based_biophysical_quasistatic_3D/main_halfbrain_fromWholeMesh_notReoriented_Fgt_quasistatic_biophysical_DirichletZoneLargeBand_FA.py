@@ -75,14 +75,9 @@ if __name__ == '__main__':
     inputmesh_format = inputmesh_path.split('.')[-1]
 
     if inputmesh_format == "xml":
-        mesh0 = fenics.Mesh(inputmesh_path) # mesh0 (for projection of nifti values)
         mesh = fenics.Mesh(inputmesh_path)
 
     elif inputmesh_format == "xdmf":
-        mesh0 = fenics.Mesh() # mesh0 (for projection of nifti values)
-        with fenics.XDMFFile(inputmesh_path) as infile:
-            infile.read(mesh0)
-            
         mesh = fenics.Mesh()
         with fenics.XDMFFile(inputmesh_path) as infile:
             infile.read(mesh)
@@ -102,6 +97,7 @@ if __name__ == '__main__':
     halfmeshRight = HalfMeshRight()
     halfmeshRight.mark(subdomains, 2)
 
+    mesh0 = fenics.SubMesh(mesh, subdomains, 2) # mesh0 (for projection of nifti values)
     mesh = fenics.SubMesh(mesh, subdomains, 2)
 
     # export subdomains
