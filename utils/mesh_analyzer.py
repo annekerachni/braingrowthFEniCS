@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 import argparse
 import os, sys
 
-sys.path.append(os.path.dirname(sys.path[0]))  # braingrowthFEniCS
-from braingrowth_3D.phenomenological_dynamic_3D.FEM_biomechanical_model.preprocessing import preprocessing
+sys.path.append(os.path.dirname(sys.path[0]))  
+from FEM_biomechanical_model import preprocessing
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Visualize .xml or .xdmf input mesh and Compute characteristics')
 
     parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=False, 
-                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets_refinedWidthCoef15.xdmf')
+                        default='./data/brain.xdmf')
 
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
 
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     print("initial max mesh_spacing: {:.3f} mm".format(max_mesh_spacing))
     print("initial mean mesh_spacing: {:.3f} mm\n".format(average_mesh_spacing))
 
+    """
     # normalized input mesh 
     #######################
     # Normalize mesh
@@ -79,10 +80,10 @@ if __name__ == '__main__':
     # Coordinates
     # -----------
     characteristics = preprocessing.compute_geometrical_characteristics(mesh, bmesh) # n_nodes, coordinates, n_tets, n_faces_Surface, n_faces_Volume, minx, maxx, miny, maxy, minz, maxz 
-    """ #print('\ncoordinates: \n{}'.format( characteristics["coordinates"] ))
+    #print('\ncoordinates: \n{}'.format( characteristics["coordinates"] ))
     print('\nminX: {}, maxX: {}'.format( characteristics['minx'], characteristics['maxx'] ))
     print('minY: {}, maxY: {}'.format( characteristics['miny'], characteristics['maxy'] ))
-    print('minZ: {}, maxZ: {}'.format( characteristics['minz'], characteristics['maxz'] )) """
+    print('minZ: {}, maxZ: {}'.format( characteristics['minz'], characteristics['maxz'] ))
 
     # Compute input mesh COG
     # ----------------------
@@ -105,17 +106,17 @@ if __name__ == '__main__':
         plt.show()  
 
 
-        """
+        
         vedo.dolfin.plot(bmesh, 
                         mode='mesh', 
                         text="input mesh", 
                         style='paraview', 
                         axes=4, 
                         interactive=True).clear()
-        """
+        
 
         # visualize the 3D mesh inner elements
-        """
+        
         plot = vedo.dolfin.plot(mesh, 
                                 mode='mesh', 
                                 text="whole mesh", 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
                         #wireframe=True,
                         style='paraview',
                         interactive=True)
-        """
+        
 
         # submesh
         class Halfbrain(fenics.SubDomain):
@@ -156,3 +157,4 @@ if __name__ == '__main__':
                         interactive=True).clear() 
         
         #fenics.plot(submesh) 
+    """

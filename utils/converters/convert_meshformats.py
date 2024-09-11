@@ -353,10 +353,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert mesh formats to XML (FEniCS format)')
     
     parser.add_argument('-i', '--input', help='Path to input mesh. Consider using following input formats depending on output format required: .msh, .mesh, .vtk, .stl -> .xml / .msh, .mesh, .vtk, .stl, .xml -> .xdmf / .msh, .mesh, .vtk, .xml, .xdmf -> . stl / .msh, .mesh, .xml, .xdmf -> .vtk / .stl -> .gii', type=str, required=False, 
-                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets.mesh')  
+                        default='./data/brain.mesh')  
     
     parser.add_argument('-o', '--output', help='Path to output mesh. Possible output formats for each input format: \n.msh -> .xml, .xdmf, .stl / .mesh -> .xml, .xdmf, .stl / .stl -> .xml, .xdmf, .gii / .vtk -> .xml, .xdmf, .stl / .xml -> .xdmf, .stl / .xdmf -> .stl', type=str, required=False, 
-                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets.xdmf') 
+                        default='./data/brain.xdmf') 
 
     args = parser.parse_args()
 

@@ -1,7 +1,7 @@
 import fenics
 from PIL import Image
 import glob
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import os
 
 # File-writing functions

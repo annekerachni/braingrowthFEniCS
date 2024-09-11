@@ -4,8 +4,8 @@ import argparse
 from mpi4py import MPI
 import sys, os
 
-sys.path.append(os.path.dirname(sys.path[0])) # braingrowthFEniCS
-from FEM_biomechanical_model_quasistatic import preprocessing
+sys.path.append(os.path.dirname(sys.path[0]))
+from FEM_biomechanical_model import preprocessing
 
 
 def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode):
@@ -86,13 +86,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Refine mesh near by surface boundary')
 
     parser.add_argument('-i', '--inputmesh', help='Path to 3D mesh to refine (.xml, .xdmf)', type=str, required=False, 
-                        default='./data/dHCP_raw/dhcpRight21GW_masked_10000faces_48000tets.xdmf') 
+                        default='./data/brain.xdmf') 
     
     #parser.add_argument('-o', '--outputmesh', help='Path to output folder', type=str, required=True, 
     #                    default='./data/') 
 
     parser.add_argument('-rfc', '--refinementwidthcoef', help='refinement width coef (integer > 0)', type=int, required=False, 
-                        default=15)  
+                        default=5)  
     # if 0: no refinement 
     # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
     
@@ -121,7 +121,8 @@ if __name__ == '__main__':
         vedo.dolfin.plot(FEniCSmesh_to_refine, wireframe=False, text='mesh to refine', style='paraview', axes=4).close()
 
     # min mesh spacing
-    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(FEniCSmesh_to_refine)
+    """min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(FEniCSmesh_to_refine)"""
+    hmin = FEniCSmesh_to_refine.hmin()
 
     # get required args for refinement function
     brainsurface_bmesh = fenics.BoundaryMesh(FEniCSmesh_to_refine, "exterior")
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     # refined mesh
     refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
                                                               brainsurface_bmesh_bbtree, 
-                                                              average_mesh_spacing, 
+                                                              hmin, 
                                                               refinement_width_coef)
     
     # generate XDMF refined mesh
