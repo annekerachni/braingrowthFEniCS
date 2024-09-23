@@ -33,51 +33,6 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=False, 
                         default="./data/dHCP_surface/fetal_week21_left_right_merged_V2.xdmf") 
     
-                        # dHCP surface
-                        # ------------
-                        # "./data/dHCP_surface/fetal_week21_left_right_merged.xml" (millimeters) 
-                        # "./data/dHCP_surface/fetal_week21_left_right_merged_V2.xml" (meters) --> 455351 tets XXX
-                        
-                        # better smoothed input dHCP mesh  at 21GW (raw) 
-                        # ----------------------------------------------
-                        # "./data/dHCP21GW_smoothed3000_9608faces_27356tets.xdmf"
-                        
-                        # refined with H0 = 2.0e-3 
-                        # ------------------------
-                        # "./data/dHCP21GW_smoothed3000_9608faces_27356tets_refinedWidthCoef1.xdmf" -->  197995 tets
-                        # "./data/dHCP21GW_smoothed3000_9608faces_27356tets_refinedWidthCoef1_refinedWidthCoef1.xdmf" -->  1449148 tets
-
-                        # "/home/anne/Desktop/V27juin24/data/dHCP_21GW_better_smoothed/dHCP21GW_smoothed3000_19386faces_57180tets_refinedWidthCoef1_reoriented.xdmf" --> 423339 tets XXX
-                        
-                        # refined with H0 = 1.8e-3 
-                        # ------------------------
-                        # "./data/dHCP21GW_smoothed3000_9608faces_27356tets_refinedWidthCoef2.xdmf" --> 210684 tets
-                        # "./data/dHCP21GW_smoothed3000_9608faces_27356tets_refinedWidthCoef2_refinedWidthCoef1.xdmf" -->  1427795 tets
-                        # "./data/dHCP21GW_smoothed3000_9608faces_27356tets_refinedWidthCoef2_refinedWidthCoef2.xdmf" -->  1608331 tets
-
-
-                        # meshes used for ECCOMAS 57
-                        # --------------------------
-                        # "./data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_5000faces.xdmf" # TODO: to refine to get a coarser mesh (tranformed with affine) to debug
-                        
-                        # './data/brain/dhcp21GW_17Ktets.xdmf' (17K tets) -
-                        # './data/wholebrain/dhcp21GW_17Ktets_resized_with_affine.xdmf' -> for debugging XXX
-                        # ./data/wholebrain/dhcp21_36K_refinedcoef5.xml (164K tets) -> wrong mesh!
-                        # ./data/wholebrain/dhcp21_36K_refinedcoef15.xml (250K tets)
-                        # './data/wholebrain/dhcp21_145K_refinedcoef20.xml' (761K tets) --> REF
-                        # './data/wholebrain/dHCP21GW_145Krefined20_resized_with_affine.xdmf XXX
-                        
-                        # './data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_refinedWidthCoef5.xdmf' (663800 tets) --> 318214 tets for half brain mesh
-                        # './data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_refinedWidthCoef10.xdmf' (740179 tets) --> 388954 tets for half brain mesh
-                        # './data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_refinedWidthCoef15.xdmf' (808937 tets) --> 386281 tets for half brain mesh
-                        # './data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_TaubinSmooth50_refinedWidthCoef10.xdmf' XXX
-                        # './data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_TaubinSmooth100_refinedWidthCoef10.xdmf' XXX
-                        
-                        # './data/tallinen_23GW_135Ktets_transformed_to_dHCP21GW.xdmf' --> for debugging XXX
-                        # './data/tallinen_23GW_135Ktets_transformed_to_dHCP21GW_refinedWidthCoef10.xdmf' 1 003 711 tets (487764 tets for half brain mesh) XXX
-                        # './data/tallinen_23GW_135Ktets_transformed_to_dHCP21GW_refinedWidthCoef10_refinedWidthCoef10.xdmf' (5 959 615 tets)
-                        # './data/tallinen_23GW_3Mtets_transformed_to_dHCP21GW.xdmf' (2782075 tets)
-    
     parser.add_argument('-c', '--convertmesh0frommillimetersintometers', help='Convert mesh0 from millimeters into meters', type=bool, required=False, default=False)
          
     parser.add_argument('-fa', '--fractionalanisotropynifti', help='Path to the fetal dchp atlas FA niftis at 21GW (whole brain)', type=str, required=False, 
