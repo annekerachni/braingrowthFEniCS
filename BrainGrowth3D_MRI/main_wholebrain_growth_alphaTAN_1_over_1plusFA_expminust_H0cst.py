@@ -55,8 +55,8 @@ if __name__ == '__main__':
     # 0.1 GW = 60480 s
     # 1500 s ~ 0.0025 GW (dt advised by S.Urcun)
     # 3600 s (1h) ~ 0.006 GW
-    # 7200 s (2h) ~ 0.012 GW --> alphaTAN = 7.0e-6
-    # 43200 s (1/2 day) ~ 0.07 GW --> alphaTAN = 1.16e-6
+    # 7200 s (2h) ~ 0.012 GW 
+    # 43200 s (1/2 day) ~ 0.07 GW 
     # 86400 s (1 day) ~ 0.14 GW
 
     parser.add_argument('-o', '--output', help='Output folder path', type=str, required=False, 
