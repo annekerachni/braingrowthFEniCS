@@ -45,7 +45,7 @@ if __name__ == '__main__':
                                  #"alphaTAN":3.0e-7, 
                                  "alphaTAN_homogeneous": 2.0e-7, 
                                  "grTAN": 1.0,
-                                 "alphaRAD": 0.5e-7, "grRAD": 1.0, # alphaTAN: [s⁻¹] --> 1.2e-8 (m).s⁻¹ (dHCP data from 21 to 28GW) / 1.0e-8(m).s⁻¹ (dHCP data from 21 to 36GW), alphaRAD: [s⁻¹]--> 1.9e-9 (m).s⁻¹ (dHCP data from 21 to 28GW) / 1.4e-9(m).s⁻¹ (dHCP data from 21 to 36GW)
+                                 "alphaRAD": 0.5e-7, "grRAD": 1.0, 
                                  "epsilon_n": 5e5, # penalty coefficient (contact mechanics)
                                  "T0_in_GW": 21.0, "Tmax_in_GW": 37.0, "dt_in_seconds": 43200, # 0.5GW (1GW=168h=604800s)
                                  "linearization_method":"newton", #"linear_solver":"gmres", "preconditioner":"sor",
@@ -56,8 +56,8 @@ if __name__ == '__main__':
     # 0.1 GW = 60480 s
     # 1500 s ~ 0.0025 GW (dt advised by S.Urcun)
     # 3600 s (1h) ~ 0.006 GW
-    # 7200 s (2h) ~ 0.012 GW --> alphaTAN = 7.0e-6
-    # 43200 s (1/2 day) ~ 0.07 GW --> alphaTAN = 1.16e-6
+    # 7200 s (2h) ~ 0.012 GW 
+    # 43200 s (1/2 day) ~ 0.07 GW 
     # 86400 s (1 day) ~ 0.14 GW
 
     parser.add_argument('-o', '--output', help='Output folder path', type=str, required=False, 
