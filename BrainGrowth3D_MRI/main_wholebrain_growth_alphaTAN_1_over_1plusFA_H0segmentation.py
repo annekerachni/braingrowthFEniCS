@@ -45,7 +45,7 @@ if __name__ == '__main__':
                         default='./data/21_28_36GW/transformed_niftis_meshes/transformed-tissue-t21.00_dhcp-19.nii.gz')
     
     parser.add_argument('-p', '--parameters', help='Simulation input parameters', type=json.loads, required=False, 
-                        default={#"H0": 1.8e-3, # 0.0018292682926829267 [m] = 1.8e-3 [m] --> 2.5
+                        default={#"H0": 1.8e-3,
                                  "muCortex": 300, "muCore": 100, # [Pa] # 300; 100
                                  "nu": 0.45, # --> 0.45
                                  #"alphaTAN":3.0e-7, 
@@ -66,11 +66,8 @@ if __name__ == '__main__':
     # 86400 s (1 day) ~ 0.14 GW
 
     parser.add_argument('-o', '--output', help='Output folder path', type=str, required=False, 
-                        default='./results/ECCOMAS_57/wholebrain/9SEPT/dHCPsurface21GW_wholebrain_Fgt_quasistatic_alphaTANFAbased_1_over_1plusFA_H0segmentation_DIRICHLETboundaries_GAP_dgRAD_calibration/')
-                        # './results/25JULY/tallinen_halfbrain_fromWholeMesh_Fgt_quasistatic_biophysical_H2e_3_muCortex300_muCore100_nu0_45_alphaTAN1e_7_NRabs9rel6_mumps_dt43200/'
-                        # './results/29JULY/tallinen_wholebrain_fromWholeMesh_Fgt_quasistatic_biophysical_H2_5e_3_muCortex300_muCore100_nu0_45_alphaTAN3e_7_NRabs8rel5_mumps_dt43200_grGrZones/'
-                        # './results/CONTACT_MECHANICS/dHCP21taubin50refined10_WholeBrain_Fgt_quasistatic_biophysical_H1_8e_3_muCortex300_muCore100_nu0_45_alphaTAN2e_7_NRabs8rel5_mumps_dt43200_ContactEpsilon5e5/'
-                        
+                        default='./results/ECCOMAS_57/wholebrain/dHCPsurface21GW_wholebrain_Fgt_quasistatic_alphaTANFAbased_1_over_1plusFA_H0segmentation/')
+  
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')
     
