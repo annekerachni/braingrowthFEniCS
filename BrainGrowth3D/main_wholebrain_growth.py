@@ -1,5 +1,3 @@
-# elastodynamic brain growth model (dynamic structural mechanics)
-
 import fenics
 import numpy as np
 import matplotlib.pyplot as plt
