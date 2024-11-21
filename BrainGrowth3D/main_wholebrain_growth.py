@@ -24,7 +24,7 @@ from utils.converters import convert_meshformats
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth elastodynamics 3D model')
+    parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth quasistatic 3D model')
 
     parser.add_argument('-i', '--input', help='Input mesh path (.xml, .xdmf); mesh unit: either in millimeters, either in meters; mesh orientation: sagittal X, front X+, axial Y, front Y+, coronal Z, top Z+', type=str, required=False, 
                         default="./data/dHCP_surface/fetal_week21_left_right_merged_V2.xdmf") 
