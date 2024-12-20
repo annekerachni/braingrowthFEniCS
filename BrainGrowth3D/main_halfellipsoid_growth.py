@@ -24,7 +24,7 @@ from utils import mesh_refiner
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='braingrowthFEniCS: halfsphere growth quasistatic 3D model')
+    parser = argparse.ArgumentParser(description='braingrowthFEniCS: half-ellipsoid growth quasistatic 3D model')
 
     parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=False, 
                         default="./data/dHCP_surface_vs_volume_RAW/Vf/dhcp_surface_t21_raw_130000faces_455983tets_reoriented_dHCPVolume.xdmf")     
