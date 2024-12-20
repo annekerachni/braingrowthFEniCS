@@ -27,7 +27,7 @@ from utils.converters import convert_meshformats
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth elastodynamics 3D model')
+    parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth quasistatic 3D model')
 
     parser.add_argument('-i', '--input', help='Input mesh path (.xml, .xdmf); mesh unit: either in millimeters, either in meters; mesh orientation: sagittal X, front X+, axial Y, front Y+, coronal Z, top Z+', type=str, required=False, 
                         default="./data/dHCP_surface_vs_volume_RAW/Vf/dhcp_surface_t21_raw_130000faces_455983tets_reoriented_dHCPVolume.xdmf") 
