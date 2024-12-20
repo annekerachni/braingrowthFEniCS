@@ -1,4 +1,4 @@
-# elastodynamic brain growth model (dynamic structural mechanics)
+# FEniCS-based quasistatic brain growth model (purely solid continuum mechanics conservation law + penalization of contact between the two hemispheres)
 
 import sys, os
 os.environ['OMP_NUM_THREADS'] = '4'  # Set the number of OpenMP CPUs to use (the MUMPS linear solver, which is the FEniCS element based on PETSc using parallelization, is based on OpenMP)
