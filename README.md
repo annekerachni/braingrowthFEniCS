@@ -32,15 +32,12 @@
     - Neumann: traction-free
     - Dirichlet: brain regions defined as "no-growth zones" are fixed (option 1) / mostly in the case of the ellipsoid, inner ellipsoid is emptied in the mesh to define Ventricular Zone that are fixed (option 2) as in [M.J. Razavi et al. 2015]
 
-
-![input_parameters](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/a78adb94-2124-4d9e-999b-ab49c2702268)
-
 #### FEniCS solver parameters:
   - linearization method: Newton-Raphson
   - lienar solver: ‘mumps’
 
 ## Simulation 
-#### Input parameters:
+#### Biophysical parameters:
 - Brain geometry:
   - *H0*: cortical thickness at t0 [m]
  
@@ -61,7 +58,10 @@
   - *T0*: initial numerical time, when mesh is smooth [gestational weeks (GW)]
   - *Tmax*: final numerical time [GW]
   - *dt*: timestep [s]
- 
+
+#### MRI-informed parameters
+![input_parameters](https://github.com/annekerachni/braingrowthFEniCS/assets/89976599/a78adb94-2124-4d9e-999b-ab49c2702268)
+
 #### Launch brain growth simulation:
 - Create a virtual env with anaconda to use FEniCS: 
   - `conda create -n fenicsvenv`
