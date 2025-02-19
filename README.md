@@ -46,8 +46,8 @@
   - *muCortex*, *muCore*: shear modulus of Cortex, resp. inner layers of the brain [Pa]
  
 - Growth:
-  - *alphaTAN*: tangential growth coefficient [(m).s⁻¹]
-  - *alphaRAD*: radial growth coefficient [(m).s⁻¹]
+  - *alphaTAN*: tangential growth coefficient [s⁻¹]
+  - *alphaRAD*: radial growth coefficient [s⁻¹]
   - *grTAN*: weigth for tangential growth [-]
   - *grRAD*: weigth for radial growth [-]
  
