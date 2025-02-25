@@ -54,7 +54,7 @@
   - *grRAD*: weigth for radial growth [-]
  
 - Contact:
-  - *epsilon*: penalty coefficient
+  - *epsilon*: penalty coefficient [kg.m⁻².s⁻²]
 
 - Simulation:
   - *T0*: initial numerical time, when mesh is smooth [gestational weeks (GW)]
