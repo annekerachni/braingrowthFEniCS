@@ -16,7 +16,7 @@
   - growth tensor $F^g$: tangential and adaptative
   - tangential growth ratio *alphaTAN*: homogeneous; MRI-based
   - growth kinetics: linear
-  - N.B. the model includes a potential radial growth in the brain sub-layers, so it can be easily added modifying the radial growth ratio *alphaRAD*
+  - N.B. The model allows for radial growth in the brain sub-layers. This can be implemented by adjusting the value of the radial growth ratio, referred to as *alphaRAD*.
 
 - growth kinematics: $F = F^e.F^g$ (multiplicative decomposition of the deformation into elastic and growth deformations)
 
@@ -30,7 +30,9 @@
       
   - boundary conditions:
     - Neumann: traction-free
-    - Dirichlet: brain regions defined as "no-growth zones" are fixed (option 1) / mostly in the case of the ellipsoid, inner ellipsoid is emptied in the mesh to define Ventricular Zone that are fixed (option 2) as in [M.J. Razavi et al. 2015]
+    - Dirichlet:
+      - Brain regions defined as "no-growth zones" are fully fixed (option 1).
+      - Mainly for simplified 3D geometries (sphere, ellipsoid), the interior of the mesh is emptied to define the "Ventricular Zone" boundary that will be fully fixed (option 2) as in [M.J. Razavi et al. 2015]
 
 #### FEniCS solver parameters:
   - linearization method: Newton-Raphson
