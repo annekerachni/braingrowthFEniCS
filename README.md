@@ -16,7 +16,7 @@
   - growth tensor $F^g$: tangential and adaptative
   - tangential growth ratio *alphaTAN*: homogeneous; MRI-based
   - growth kinetics: linear
-  - N.B. The model allows for radial growth in the brain sub-layers. This can be implemented by adjusting the value of the radial growth ratio, referred to as *alphaRAD*.
+  - N.B. The model allows for radial growth in the cortex sub-layers. This can be implemented by adjusting the value of the radial growth ratio, referred to as *alphaRAD*.
 
 - growth kinematics: $F = F^e.F^g$ (multiplicative decomposition of the deformation into elastic and growth deformations)
 
