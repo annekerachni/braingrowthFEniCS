@@ -45,10 +45,11 @@
 ## Simulation 
 #### Biophysical parameters:
 - Brain geometry:
+  - The input brain mesh should be in RAS+ orientation and either in millimeters or in meters
   - *H0*: cortical thickness at t0 [m]
  
 - Brain material:
-  - *K*: bulk modulus of the brain material [Pa]
+  - *nu*: Poisson's ratio of the brain material [-]
   - *muCortex*, *muCore*: shear modulus of Cortex, resp. inner layers of the brain [Pa]
  
 - Growth:
@@ -73,7 +74,7 @@
   - `conda create -n fenicsvenv`
   - `conda install -c conda-forge fenics` (fenics==2019.1.0)
 - Then install dedicated libraries: `pip install -r requirements.txt`
-- Simulations can be launched within each simulation case in both `BrainGrowth2D`, `BrainGrowth3D` or `BrainGrowth3D_MRI` folders. e.g. `main_brain_growth.py`; `main_halfbrain_notReoriented_Fgt_quasistatic_biophysical_DirichletZoneLargeBand_FA_CortexDelineation.py`
+- Simulations can be launched within each simulation case in both `BrainGrowth2D`, `BrainGrowth3D` or `BrainGrowth3D_MRI` folders. e.g. `main_sphere_growth.py`; `main_wholebrain_growth.py`; `main_wholebrain_growth_MRI_informed.py`
 
 ## References
 - T. Tallinen et al., On the growth and form of cortical convolutions. Nature Physics, 12(6):588–593, 2016 
