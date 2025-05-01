@@ -10,7 +10,7 @@
 - The whole simulation pipeline relies on open source tools such as Gmsh, 3D Slicer, Meshlab, Netgen, FEniCS and slam (https://github.com/gauzias/slam) and uses `niftitomesh`, `metrics`, `utils`, `MRI_driven_parameters`.
 
 <div align="center">
- <img src="https://github.com/user-attachments/assets/d2ef271e-07da-4944-ba56-d9a8bed6b92e" width="400">
+ <img src="https://github.com/user-attachments/assets/c7df2b03-18c5-4f2f-87e7-c0ac29c166c8" width="400"/> <img src="https://github.com/user-attachments/assets/df45547a-71e0-49d7-b532-2216973c752e" width="400"/>
 </div>
 
 ## Biomechanical model
