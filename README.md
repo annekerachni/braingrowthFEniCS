@@ -9,7 +9,9 @@
   
 - The whole simulation pipeline relies on open source tools such as Gmsh, 3D Slicer, Meshlab, Netgen, FEniCS and slam (https://github.com/gauzias/slam) and uses `niftitomesh`, `metrics`, `utils`, `MRI_driven_parameters`.
 
-<img src="https://github.com/user-attachments/assets/4ffdda2e-3971-44ee-bb05-f0df87e20683" width="200">
+<div align="center">
+ <img src="https://github.com/user-attachments/assets/4ffdda2e-3971-44ee-bb05-f0df87e20683" width="400">
+</div>
 
 ## Biomechanical model
 #### Brain growth mechanics:
