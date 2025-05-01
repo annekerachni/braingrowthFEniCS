@@ -31,10 +31,10 @@ def compute_mesh_projected_normals(V, mesh_vertex_coords, bmesh_vertex_coords, v
         
         # Compute vertex index (int) in B (Function Space) reference (i.e. less indices) of the closest Point at Top Boundary to given Mesh Point ('vertex_index')   
         closestBPointIndex_inBref = np.argmin(np.linalg.norm(bmesh_vertex_coords - mesh_vertex_coords[vertex_index], axis=1)) # B index (in the B ref) for 2D closest Point/Vertex
-        closestBPointDOF_inVref = vertexB_2_dofsV_mapping[closestBPointIndex_inBref]
+        closestBPointDOFs_inVref = vertexB_2_dofsV_mapping[closestBPointIndex_inBref]
 
         # Allocate to given mesh Point ('vertex_index') the normal vector of the closest Point at Top Boundary (=> get projected normal vector for all mesh Points) 
-        Mesh_Nt.vector()[vertex2dofs_V[vertex_index]] = Boundary_Nt.vector()[closestBPointDOF_inVref] 
+        Mesh_Nt.vector()[vertex2dofs_V[vertex_index]] = Boundary_Nt.vector()[closestBPointDOFs_inVref] 
         
     return Mesh_Nt 
 

@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Visualize .xml or .xdmf input mesh and Compute characteristics')
 
     parser.add_argument('-i', '--inputmeshpath', help='Input mesh path (.xml format)', type=str, required=False, 
-                        default='./data/brain.xdmf')
+                        default='./data/MRI_informed_simulations/dHCP_volume_21GW/affine_transformed/transformed_dhcp21GW_isotropic.xdmf') # _refinedWidthCoef5
 
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
 

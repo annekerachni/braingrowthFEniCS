@@ -1,3 +1,7 @@
+import sys, os
+os.environ['OMP_NUM_THREADS'] = '4'  # Set the number of OpenMP CPUs to use (the MUMPS linear solver, which is the FEniCS element based on PETSc using parallelization, is based on OpenMP)
+# os.environ['OMP_NUM_THREADS'] required to be imported prior to fenics
+
 import fenics
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,9 +12,6 @@ import argparse
 import json
 import time
 from mpi4py import MPI
-import sys, os
-from scipy.spatial import cKDTree
-import nibabel as nib
 
 sys.path.append(sys.path[0]) # BrainGrowth3D
 sys.path.append(os.path.dirname(sys.path[0])) # braingrowthFEniCS
@@ -18,26 +19,37 @@ sys.path.append(os.path.dirname(sys.path[0])) # braingrowthFEniCS
 from FEM_biomechanical_model import preprocessing, numerical_scheme_spatial, mappings, differential_layers, growth, projection
 from utils.export_functions import export_simulation_end_time_and_iterations, export_XML_PVD_XDMF
 from utils.converters import convert_meshformats
-from utils import mesh_refiner
 
 
 if __name__ == '__main__':
+    
 
-    parser = argparse.ArgumentParser(description='braingrowthFEniCS: halfsphere growth quasistatic 3D model')
+    parser = argparse.ArgumentParser(description='braingrowthFEniCS: FEniCS-based quasistatic sphere growth model.' \
+    'The computational model implements a purely solid continuum mechanics conservation law.' \
+    'An increasing tangential growth rate "alphaTAN" in the cortical layer is considered across gestational time')
 
-    parser.add_argument('-i', '--input', help='Input mesh path (xml)', type=str, required=False, 
-                        default='./data/halfsphere/halfsphere_radius1meter_refinedWidthCoef5.xdmf')     
+    parser.add_argument('-i', '--input', help='Input sphere mesh path (.xml, .xdmf)', type=str, required=False, 
+                        default='./data/sphere/sphere_257Ktets_20Kfaces_refined5.xdmf') # sphere mesh in meters  
    
     parser.add_argument('-p', '--parameters', help='Simulation input parameters', type=json.loads, required=False, 
-                        default={"H0": 2.2e-3, # [m] 
-                                 "muCortex": 300, "muCore": 100, # [Pa] 
-                                 "nu": 0.48,
-                                 "alphaTAN": 5.0e-6, "alphaRAD": 0.0, "grTAN": 1.0, "grRAD": 1.0, # alphaTAN: [s⁻¹], alphaRAD: [s⁻¹] 
-                                 "T0_in_GW": 21.0, "Tmax_in_GW": 29.0, "dt_in_seconds": 7200, # 0.5GW (1GW=168h=604800s)
-                                 "linearization_method":"newton", "linear_solver":"gmres", "preconditioner":"sor"}) 
+                        default={"H0": 2e-3, # [m] 
+                                 "muCortex": 4500, "muCore": 300, # [Pa] 
+                                 "nu": 0.45, # [-]
+                                 "alphaTAN_values": {21: 1.3e-8, 
+                                                     22: 3.2e-8, 
+                                                     23: 5.6e-8, 
+                                                     24: 6.9e-8, 
+                                                     25: 8.7e-8, 
+                                                     26: 1.1e-7}, # gestational time [GW]: alphaTAN [s⁻¹] --> progressive increase in the growth intensity (cf. alphaTAN computed from dHCP surface data)
+                                 "alphaRAD": 0.0, # [s⁻¹]
+                                 "grTAN": 1.0, "grRAD": 1.0, # [-]
+                                 "T0_in_GW": 21.0, "Tmax_in_GW": 36.0, "dt_in_seconds": 86400, # 0.5GW (1GW=168h=604800s)
+                                 "linearization_method":"newton", 
+                                 "newton_absolute_tolerance":1E-9, "newton_relative_tolerance":1E-6, "max_iter": 15, 
+                                 "linear_solver":"mumps"}) 
     
     parser.add_argument('-o', '--output', help='Output folder path', type=str, required=False, 
-                        default='./results/halfsphere_growth/')
+                        default='./results/sphere_growth_alphaTANincreasing/')
                
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')
@@ -54,7 +66,7 @@ if __name__ == '__main__':
     # Cortex thickness
     # ----------------
     H0 = args.parameters["H0"]
-    cortical_thickness = fenics.Expression('H0 + 0.01*t', H0=H0, t=0.0, degree=0)
+    cortical_thickness = fenics.Expression('H0 + 0.01*t', H0=H0, t=0.0, degree=0) # eventually modifiy the time function of cortical thickness
     gdim=3
     
     # Mesh
@@ -66,53 +78,69 @@ if __name__ == '__main__':
     inputmesh_format = inputmesh_path.split('.')[-1]
 
     if inputmesh_format == "xml":
-        mesh = fenics.Mesh(inputmesh_path)
+        mesh0 = fenics.Mesh(inputmesh_path)
 
     elif inputmesh_format == "xdmf":
-        mesh = fenics.Mesh()
+        mesh0 = fenics.Mesh()
         with fenics.XDMFFile(inputmesh_path) as infile:
-            infile.read(mesh)
+            infile.read(mesh0)
     
     # input mesh was generated with Gmsh --> in meters. 
     # It is required to resize the mesh towards 21GW brain real size range. i.e. brain radius at 21GW ~ 30 mm = 0.03 m => multiply all coords by 0.03
-    mesh.coordinates()[:] = mesh.coordinates()[:] * 0.03
+    mesh0.coordinates()[:] = mesh0.coordinates()[:] * 0.03
 
-    bmesh = fenics.BoundaryMesh(mesh, "exterior") # bmesh at t=0.0 (cortex envelop)
+    bmesh0 = fenics.BoundaryMesh(mesh0, "exterior") # bmesh at t=0.0 (cortex envelop)
 
     if args.visualization == True:
-        fenics.plot(mesh) 
+        fenics.plot(mesh0) 
         plt.title("input mesh")
         plt.show() 
 
-    # reorient gifti mesh
-    #preprocessing.reorient_gifti_mesh('./data/brain/dHCP_21GW/fetal.week21.right.pial.surf.gii')
-
     # mesh characteristics
-    characteristics0 = preprocessing.compute_geometrical_characteristics(mesh, bmesh)
+    characteristics0 = preprocessing.compute_geometrical_characteristics(mesh0, bmesh0)
     center_of_gravity0 = preprocessing.compute_center_of_gravity(characteristics0) 
-    min_mesh_spacing0, average_mesh_spacing0, max_mesh_spacing0 = preprocessing.compute_mesh_spacing(mesh)
+    min_mesh_spacing0, average_mesh_spacing0, max_mesh_spacing0 = preprocessing.compute_mesh_spacing(mesh0)
     print('input mesh characteristics: {}'.format(characteristics0))
     print('input mesh COG = [xG0:{}, yG0:{}, zG0:{}]'.format(center_of_gravity0[0], center_of_gravity0[1], center_of_gravity0[2]))
     print("input mesh min mesh spacing: {:.3f} mm".format(min_mesh_spacing0))
     print("input mesh mean mesh spacing: {:.3f} mm".format(average_mesh_spacing0))
     print("input mesh max mesh spacing: {:.3f} mm".format(max_mesh_spacing0))
 
-    # Export the characteristics of mesh_TO 
-    # -------------------------------------
-    #fenics.File(args.output + "mesh_T0.xml") << mesh
-    """
+
+    ###
+    # empty sphere mesh with an inner VZ sphere
+    sphere_radius_meters = 1.0 * 0.03
+    radius_VZ = sphere_radius_meters / 5 
+    #dilate_coef_x, dilate_coef_y, dilate_coef_z = sphere_radius_meters, sphere_radius_meters, sphere_radius_meters # --> sphere
+
+    # Mark cells
+    cell_markers = fenics.MeshFunction("size_t", mesh0, mesh0.topology().dim())
+    cell_markers.set_all(0)
+
+    ####
+
+    class OuterSphere(fenics.SubDomain):
+        def __init__(self, inner_radius, COG):
+            fenics.SubDomain.__init__(self)
+            self.inner_radius = inner_radius
+            self.COG = COG
+
+        def inside(self, x, on_boundary):
+            return fenics.sqrt( (x[0]-self.COG[0])**2 + (x[1] - self.COG[1])**2 + (x[2]-self.COG[2])**2 ) >= self.inner_radius
+
+    # Mark the domain regions outside from the inner radius
+    outer_sphere = OuterSphere(radius_VZ, center_of_gravity0)
+    outer_sphere.mark(cell_markers, 2)
+
+    # Generate the new emptied sphere mesh 
+    mesh = fenics.SubMesh(mesh0, cell_markers, 2) # cells belonging to the VZ (marked 2) are removed from the sphere mesh.
+	
     with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_T0.xdmf")) as xdmf:
         xdmf.write(mesh)
-    
-            
-    convert_meshformats.xml_to_vtk(args.output + "mesh_T0.xml", args.output + "mesh_T0.vtk")
-    export_simulation_outputmesh_data.export_resultmesh_data(args.output + "analytics/",
-                                                             args.output + "mesh_T0.vtk",
-                                                             args.parameters["T0"],
-                                                             0,
-                                                             0.0,
-                                                             "mesh_T0.txt")
-    """
+
+    ###
+
+    bmesh = fenics.BoundaryMesh(mesh, "exterior")
 
     # Elastic parameters
     ####################
@@ -121,12 +149,13 @@ if __name__ == '__main__':
     
     nu = fenics.Constant(args.parameters["nu"])
     
-    KCortex = fenics.Constant( 2*muCortex.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # 3D
-    KCore = fenics.Constant( 2*muCore.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # 3D
+    KCortex = fenics.Constant( 2*muCortex.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # formula for 3D geometries. source: https://en.wikipedia.org/wiki/Lam%C3%A9_parameters
+    KCore = fenics.Constant( 2*muCore.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # formula for 3D geometries.
     
     # Growth parameters
     ###################
-    alphaTAN = fenics.Constant(args.parameters["alphaTAN"])
+    #alphaTAN = fenics.Constant(args.parameters["alphaTAN"])
+    alphaTAN_values = args.parameters["alphaTAN_values"] 
     grTAN = fenics.Constant(args.parameters["grTAN"])
 
     alphaRAD = fenics.Constant(args.parameters["alphaRAD"])
@@ -165,6 +194,21 @@ if __name__ == '__main__':
     FEniCS_FEM_Functions_file.parameters["functions_share_mesh"] = True
     FEniCS_FEM_Functions_file.parameters["rewrite_function_mesh"] = True
 
+    numerical_metrics_path = args.output + "numerical_metrics/"
+
+    try:
+        os.makedirs(numerical_metrics_path)
+    except OSError as e:
+        print(f"Erreur: {e}")
+    
+    residual_path = os.path.join(numerical_metrics_path, 'residuals.json')
+    residual_metrics = {}
+
+    comp_time_path = os.path.join(numerical_metrics_path, 'computational_times.json') 
+    comp_time = {} 
+    
+    energy_internal_path = os.path.join(numerical_metrics_path, 'internal_energies.json') 
+    energy_internal = {} 
     
     ##################################################
     ###################### Problem ###################
@@ -173,62 +217,77 @@ if __name__ == '__main__':
     # Boundaries
     ############
     print("\ncomputing and marking boundaries...")
-    #bmesh_cortexsurface_bbtree = fenics.BoundingBoxTree()
-    #bmesh_cortexsurface_bbtree.build(bmesh) 
+    bmesh_bbtree = fenics.BoundingBoxTree()
+    bmesh_bbtree.build(bmesh) 
 
     # initialize boundaries
-    regions = fenics.MeshFunction('size_t', mesh, mesh.topology().dim())
-    regions.set_all(0)
 
     #boundaries = fenics.MeshFunction('size_t', mesh, mesh.topology().dim() - 1)
-    boundaries_volume = fenics.MeshFunction("size_t", mesh, mesh.topology().dim() - 1)  
-    boundaries_volume.set_all(100)
+    volume_facet_marker = fenics.MeshFunction("size_t", mesh, mesh.topology().dim() - 1)  
+    volume_facet_marker.set_all(100)
 
-    boundaries_surface = fenics.MeshFunction('size_t', bmesh, bmesh.topology().dim(), 0)
-    boundaries_surface.set_all(100)
+    boundary_face_marker = fenics.MeshFunction('size_t', bmesh, bmesh.topology().dim(), 0)
+    boundary_face_marker.set_all(100)
     
-    # define part of the boundary to fix (Dirichlet BCs) 
-
-    """
+    # mark surfaces (cortex + ventricular zone)
     class CortexSurface(fenics.SubDomain): 
-        def __init__(self, Z_midsphere_plane):
+
+        def __init__(self, bmesh_bbtree):
             fenics.SubDomain.__init__(self)
-            self.Z_midsphere_plane = Z_midsphere_plane
+            self.bmesh_bbtree = bmesh_bbtree
 
-        def inside(self, x, on_boundary):  
-            tol = 1E-14
-            return x[2] > self.Z_midsphere_plane # need to remove "on_boundary" to build submesh of a boundary mesh --> https://fenicsproject.discourse.group/t/how-to-build-vectorfunctionspace-on-part-of-a-2d-mesh-boundary/9648; returns all boundary points except those on interhemisphere plane, supposed to be fixed.
+        def inside(self, x, on_boundary): 
+            _, distance = self.bmesh_bbtree.compute_closest_entity(fenics.Point(*x)) # compute_closest_point() https://fenicsproject.org/olddocs/dolfin/1.5.0/python/programmers-reference/cpp/mesh/GenericBoundingBoxTree.html
+            return fenics.near(distance, fenics.DOLFIN_EPS) # returns Points
+
+    cortexsurface = CortexSurface(bmesh_bbtree)
+    cortexsurface.mark(volume_facet_marker, 101, check_midpoint=False) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
+    cortexsurface.mark(boundary_face_marker, 101, check_midpoint=False)
     
-    Z_midsphere_plane = 0.0
-    cortexsurface = CortexSurface(Z_midsphere_plane)
-    cortexsurface.mark(boundaries_volume, 101, check_midpoint=False) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
-    cortexsurface.mark(boundaries_surface, 101, check_midpoint=False) # # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
-    # cortexsurface.mark(regions, 1)
-    """
+    # define part of the boundary to fix (Dirichlet BCs) --> interior of the ellipsoid for the folding not to be impacted (Ventricular Zone empited and fixed)
+    min_coords_ellipsoid = np.min(mesh.coordinates()[:, 0])
+    max_coords_ellipsoid = np.max(mesh.coordinates()[:, 0])
 
-    class DirichletBCs(fenics.SubDomain): 
-         # midsphere plane: Z=0.0
+    # Defining InnerBoundary_VZ (99) enables to compute d2s; gm and Fg properly, only considering external cortex surface (101).
+    # ----------------------------------------------------------------------------------------------
+    class InnerBoundary_VZ(fenics.SubDomain): # enable to set to 101 only the exterior boundary. Otherwise, d2s; gm and Fg will consider this inner VZ boundary.
+        def __init__(self, inner_radius, COG):
+            fenics.SubDomain.__init__(self)
+            self.inner_radius = inner_radius
+            self.COG = COG
+
         def inside(self, x, on_boundary):
             tol = 1E-14
-            return fenics.near(x[2], 0, tol) #and on_boundary
-        
-    dirichletBCs = DirichletBCs()
-    dirichletBCs.mark(boundaries_volume, 102, check_midpoint=False) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
-    dirichletBCs.mark(boundaries_surface, 102, check_midpoint=False)
+            return fenics.sqrt( (x[0]-self.COG[0])**2 + (x[1]-self.COG[1])**2 + (x[2]-self.COG[2])**2 ) <= 2*self.inner_radius + tol # and on_boundary
+    
+    inner_boundary_VZ = InnerBoundary_VZ(radius_VZ, center_of_gravity0)
+    inner_boundary_VZ.mark(boundary_face_marker, 99, check_midpoint=False) # and on_boundary needs to be removed for 102 to be marked on bmesh marker!
 
-    bmesh_cortex = fenics.SubMesh(bmesh, boundaries_surface, 100) # part of the boundary mesh standing for the cortical surface
-    with fenics.XDMFFile(MPI.COMM_WORLD, args.output + "bmesh_cortex.xdmf") as xdmf:
-        xdmf.write(bmesh_cortex)
-    """
-    halfsphere = fenics.SubMesh(mesh, regions, 1)
-    """
+    # Defining VZ inner boundary using volume facets, which is used by FEniCS to build Dirichlet BCs
+    # ----------------------------------------------------------------------------------------------
+    class DirichletBCs_VZ(fenics.SubDomain):
+        def __init__(self, inner_radius, COG):
+            fenics.SubDomain.__init__(self)
+            self.inner_radius = inner_radius
+            self.COG = COG
+
+        def inside(self, x, on_boundary):
+            tol = 1E-14
+            return fenics.sqrt( (x[0]-self.COG[0])**2 + (x[1]-self.COG[1])**2 + (x[2]-self.COG[2])**2 ) <= 2*self.inner_radius + tol and on_boundary
+    
+    dirichletBCs_VZ = DirichletBCs_VZ(radius_VZ, center_of_gravity0)
+    dirichletBCs_VZ.mark(volume_facet_marker, 102) # and on_boundary must be added, otherwise, tetraedrons will be fixed and not only faces at the surface of inner VZ boundary
+
+    # export marked boundaries (both are required for the simulation)
+    export_XML_PVD_XDMF.export_PVDfile(args.output, 'volume_facet_marker_T0', volume_facet_marker) # "volume_facet_marker" is used to define the surface zone for FEM integration and in particular the surface where the Dirichlet boundary conditions apply.
+    export_XML_PVD_XDMF.export_PVDfile(args.output, 'boundary_face_marker_T0', boundary_face_marker) # "boundary_face_marker" is used to build bmesh_cortex and the associated bmesh_cortexsurface_bbtree. And then, bmesh_cortexsurface_bbtree is used to define the FEM functions d2s and gm, required by the simulation (so to define the zone where there will be growth).  
+    
+    # build cortical surface mesh after having removed the boundary 101 associated with the Dirichlet BCs in the Ventricular Zone. 
+    bmesh_cortex = fenics.SubMesh(bmesh, boundary_face_marker, 101) # part of the boundary mesh standing for the cortical surface --> at this stage, 101 corresponds only to all the cortex boundary (ventricular zone boundary, when labelled 102 was removed)
 
     #print("\ncomputing and marking boundaries...")
     bmesh_cortexsurface_bbtree = fenics.BoundingBoxTree()
-    bmesh_cortexsurface_bbtree.build(bmesh_cortex)                
-    
-    # export marked boundaries
-    export_XML_PVD_XDMF.export_PVDfile(args.output, 'boundaries_volume_T0', boundaries_volume)
+    bmesh_cortexsurface_bbtree.build(bmesh_cortex)          
 
     # Subdomains
     ############
@@ -251,12 +310,14 @@ if __name__ == '__main__':
     #Vtensor = fenics.TensorFunctionSpace(mesh, "DG", 0)
     Vtensor = fenics.TensorFunctionSpace(mesh,'CG', 1, shape=(3,3)) # https://fenicsproject.discourse.group/t/outer-product-evaluation/2159; https://fenicsproject.discourse.group/t/how-to-choose-projection-space-for-stress-tensor-post-processing/5568/4
 
+    Vtensor_order3 = fenics.VectorFunctionSpace(mesh, "DG", 0, dim=27) # to project grad(Fe)
+
     # FEM Functions
     ###############
 
     # Scalar functions of V
     H = fenics.Function(S, name="H") 
-    fenics.File(os.path.join(args.output, "FEM_functions/H.xml")) << H
+    #fenics.File(os.path.join(args.output, "FEM_functions/H.xml")) << H
     d2s = fenics.Function(S, name="d2s")
     #grGrowthZones = fenics.Function(S, name="grGrowthZones")
     #gr = fenics.Function(S, name="gr") 
@@ -267,16 +328,12 @@ if __name__ == '__main__':
     dg_TAN = fenics.Function(S, name="dgTAN")
     dg_RAD = fenics.Function(S, name="dgRAD") 
 
+    J = fenics.Function(S, name="Jacobian")
+
     # Vector functions of V
     u = fenics.Function(V, name="Displacement") # Trial function. Current (unknown) displacement
     du = fenics.TrialFunction(V)
     v_test = fenics.TestFunction(V) # Test function
-
-    """
-    u_old = fenics.Function(V) # Fields from previous time step (displacement, velocity, acceleration)
-    v_old = fenics.Function(V)
-    a_old = fenics.Function(V)
-    """
 
     BoundaryMesh_Nt = fenics.Function(V, name="BoundaryMesh_Nt")
     Mesh_Nt = fenics.Function(V, name="Mesh_Nt")
@@ -284,6 +341,11 @@ if __name__ == '__main__':
     # Vector functions of Vtensor
     Fg_T = fenics.Function(Vtensor, name="Fg")
     PK1tot_T = fenics.Function(Vtensor, name="PK1tot") 
+    Ee_T = fenics.Function(Vtensor, name="E_strain") 
+
+    F_T = fenics.Function(Vtensor, name="F") 
+    Fe_T = fenics.Function(Vtensor, name="Fe") 
+    gradFe_T = fenics.Function(Vtensor_order3, name="gradFe") 
 
     # Mappings
     ##########
@@ -303,7 +365,7 @@ if __name__ == '__main__':
 
     # Measurement entities 
     # --------------------
-    ds = fenics.Measure("ds", domain=mesh, subdomain_data=boundaries_volume) 
+    ds = fenics.Measure("ds", domain=mesh, subdomain_data=volume_facet_marker) 
 
     # prerequisites before computing Fg and mu (H, d2s and gm=f(d2s, H) required)
     # ----------------------------------------
@@ -319,43 +381,16 @@ if __name__ == '__main__':
     """for dof in S.dofmap().dofs():
         d2s_dof = d2s.vector()[dof]
         gm.vector()[dof] = compute_differential_term(d2s_dof, H.vector()[dof]) """
-        
-    # brain regions growth mask (avoid growth in Dirichlet boundary zone)
-    # ------------------------- 
-    # add growth for all mesh nodes
-    """
-    grGrowthZones.vector()[:] = 1.0 
-    
-    for vertex, dof in enumerate(vertex2dof_S):
-        if mesh.coordinates()[vertex, 2] < -0.7 * 0.03:
-            grGrowthZones.vector()[dof] = 0.0
-    """
-        
-    # remove growth for Dirichlet fixed nodes
-    """
-    class MyDict(dict): # https://fenicsproject.org/qa/5268/is-that-possible-to-identify-a-facet-by-its-vertices/
-        def get(self, key):
-            return dict.get(self, sorted(key))
-
-    f_2_v = MyDict((facet.index(), tuple(facet.entities(0))) for facet in fenics.facets(mesh))
-    
-    for face in fenics.facets(mesh):
-        vertex1, vertex2, vertex3 = f_2_v[face.index()]
-        if boundaries_volume.array()[face.index()] == 102: # Dirichlet boundary (face is supposed to be fixed --> no growth)
-            grGrowthZones.vector()[vertex2dof_S[vertex1]] = 0.0
-            grGrowthZones.vector()[vertex2dof_S[vertex2]] = 0.0
-            grGrowthZones.vector()[vertex2dof_S[vertex3]] = 0.0
-    """
 
     # Fg
     # --
     print("\ninitializing growth coefficients: dgTAN & dgRAD...")
     #projection.local_project(grTAN * gm * grGrowthZones * alphaTAN * dt_in_seconds, S, dg_TAN) 
-    projection.local_project(grTAN * gm * alphaTAN * dt_in_seconds, S, dg_TAN) 
+    projection.local_project(grTAN * gm * alphaTAN_values[int(T0_in_GW)] * dt_in_seconds, S, dg_TAN) 
     projection.local_project(grRAD * alphaRAD * dt_in_seconds, S, dg_RAD) 
 
     print("\ninitializing normals to boundary...")
-    boundary_normals = growth.compute_topboundary_normals(mesh, ds(100), V)
+    boundary_normals = growth.compute_topboundary_normals(mesh, ds(101), V)
     projection.local_project(boundary_normals, V, BoundaryMesh_Nt)
 
     print("\ninitializing projected normals of nodes of the whole mesh...")
@@ -403,6 +438,8 @@ if __name__ == '__main__':
     Ce = fenics.variable( Fe.T * Fe )
     Be = fenics.variable( Fe * Fe.T )
 
+    Ee = 0.5*(Ce - Id)  # Green-Lagrange tensor --> visualize strain
+
     # Invariants 
     Je = fenics.variable( fenics.det(Fe) ) 
     Tre = fenics.variable( fenics.tr(Be) )
@@ -436,7 +473,7 @@ if __name__ == '__main__':
     print("\nexpressing the non linear variational problem to solve...")
     jacobian = fenics.derivative(res, u, du) # we want to find u that minimize F(u) = 0 (F(u): total potential energy of the system), where F is the residual form of the PDE => dF(u)/du 
 
-    bc_Dirichlet = fenics.DirichletBC(V, fenics.Constant((0., 0., 0.)), boundaries_volume, 102) # no displacement in x,y,z --> fixed zone to avoid additional solution including Rotations & Translations
+    bc_Dirichlet = fenics.DirichletBC(V, fenics.Constant((0., 0., 0.)), volume_facet_marker, 102) # no displacement in x,y,z --> fixed zone to avoid additional solution including Rotations & Translations
     bcs = [bc_Dirichlet]
     nonlinearvariationalproblem = fenics.NonlinearVariationalProblem(res, u, bcs, jacobian)   
 
@@ -445,33 +482,40 @@ if __name__ == '__main__':
     ####################################################
 
     # Parameters
-    # ----------
+    #############
     nonlinearvariationalsolver = fenics.NonlinearVariationalSolver(nonlinearvariationalproblem) 
     # info(nonlinearvariationalsolver.parameters, True) # display the list of available parameters and default values
     # https://home.simula.no/~hpl/homepage/fenics-tutorial/release-1.0-nonabla/fenics_tutorial_1.0.pdf
-    #https://link.springer.com/content/pdf/10.1007/978-3-319-52462-7_5.pdf
-    # https://fenicsproject.org/qa/5894/nonlinearvariationalsolver-tolerance-what-solver-options/ (first used)
+    # https://link.springer.com/content/pdf/10.1007/978-3-319-52462-7_5.pdf
+    # https://fenicsproject.org/qa/5894/nonlinearvariationalsolver-tolerance-what-solver-options/ 
 
     # SOLVER PARAMETERS FOR NON-LINEAR PROBLEM 
-    nonlinearvariationalsolver.parameters["nonlinear_solver"] = args.parameters["linearization_method"] # newton
+    nonlinearvariationalsolver.parameters["nonlinear_solver"] = args.parameters["linearization_method"] 
     #nonlinearvariationalsolver.parameters['newton_solver']['convergence_criterion'] = "incremental" 
-    nonlinearvariationalsolver.parameters['newton_solver']['absolute_tolerance'] = 1E-3 # 1E-7 # 1E-10 for unknown (displacement) in mm
-    nonlinearvariationalsolver.parameters['newton_solver']['relative_tolerance'] = 1E-4 # 1E-8 # 1E-11 for unknown (displacement) in mm
-    nonlinearvariationalsolver.parameters['newton_solver']['maximum_iterations'] = 25 # 50 (25)
-    nonlinearvariationalsolver.parameters['newton_solver']['relaxation_parameter'] = 1.0 # means "full" Newton-Raphson iteration expression: u_k+1 = u_k - res(u_k)/res'(u_k) => u_k+1 = u_k - res(u_k)/jacobian(u_k)
+    nonlinearvariationalsolver.parameters['newton_solver']['absolute_tolerance'] = args.parameters["newton_absolute_tolerance"] 
+    nonlinearvariationalsolver.parameters['newton_solver']['relative_tolerance'] = args.parameters["newton_relative_tolerance"] 
+    nonlinearvariationalsolver.parameters['newton_solver']['maximum_iterations'] = args.parameters["max_iter"] 
+    nonlinearvariationalsolver.parameters['newton_solver']['relaxation_parameter'] = 0.8 # means "full" Newton-Raphson iteration expression: u_k+1 = u_k - res(u_k)/res'(u_k) => u_k+1 = u_k - res(u_k)/jacobian(u_k)
 
+    nonlinearvariationalsolver.parameters['newton_solver']['error_on_nonconvergence'] = True
+    nonlinearvariationalsolver.parameters['newton_solver']['report'] = True
+    
     # CHOOSE AND PARAMETRIZE THE LINEAR SOLVER IN EACH NEWTON ITERATION (LINEARIZED PROBLEM) 
+    nonlinearvariationalsolver.parameters['newton_solver']['linear_solver'] = args.parameters["linear_solver"] 
+    
+    """
     nonlinearvariationalsolver.parameters['newton_solver']['linear_solver'] = args.parameters["linear_solver"] # linearized problem: AU=B --> Choose between direct method U=A⁻¹B O(N³) (e.g. 'mumps') or iterative/Krylov subspaces method U=A⁻¹B~(b + Ab + A²b + ...) O(num_iter * N²) (e.g. 'gmres' for non-symmetric problem , 'cg') to compute A⁻¹. 
     nonlinearvariationalsolver.parameters['newton_solver']['preconditioner'] = args.parameters["preconditioner"]
-
-    nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['absolute_tolerance'] = 1E-4 #1E-9
-    nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['relative_tolerance'] = 1E-5 #1E-7
+    
+    nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['absolute_tolerance'] = args.parameters["krylov_absolute_tolerance"] #1E-4 #1E-9
+    nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['relative_tolerance'] = args.parameters["krylov_relative_tolerance"] #1E-5 #1E-7
     nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['maximum_iterations'] = 1000 # number of iterations with Krylov subspace method
+    """
     
     # Reusing previous unknown u_n as the initial guess to solve the next iteration n+1 
-    #nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['nonzero_initial_guess'] = True # https://link.springer.com/content/pdf/10.1007/978-3-319-52462-7_5.pdf --> "Using a nonzero initial guess can be particularly important for timedependent problems or when solving a linear system as part of a nonlinear iteration, since then the previous solution vector U will often be a good initial guess for the solution in the next time step or iteration."
+    ####################################################################################
+    nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['nonzero_initial_guess'] = True # Enables to use a non-null initial guess for the Krylov solver (MUMPS) within a Newton-Raphson iteration. https://link.springer.com/content/pdf/10.1007/978-3-319-52462-7_5.pdf --> "Using a nonzero initial guess can be particularly important for timedependent problems or when solving a linear system as part of a nonlinear iteration, since then the previous solution vector U will often be a good initial guess for the solution in the next time step or iteration."
     # parameters['krylov_solver']['monitor_convergence'] = True # https://fenicsproject.org/qa/1124/is-there-a-way-to-set-the-inital-guess-in-the-krylov-solver/
-    
     
     ########################################################
     ###################### Simulation ######################
@@ -495,19 +539,12 @@ if __name__ == '__main__':
     FEniCS_FEM_Functions_file.write(mu, T0_in_GW)
     FEniCS_FEM_Functions_file.write(K, T0_in_GW)
 
-    """start_time = time.time ()"""
-    energies = np.zeros((int(Nsteps+1), 4))
-    E_damp = 0
-    E_ext = 0
-    
+    initial_time = time.time() 
     for i, dt in enumerate( tqdm( np.diff(times), desc='brain is growing...', leave=True) ): # dt = dt_in_seconds
 
-        fenics.set_log_level(fenics.LogLevel.ERROR) # in order not to print solver info logs 
+        #fenics.set_log_level(fenics.LogLevel.ERROR) # in order not to print solver info logs about Newton solver tolerances
+        fenics.set_log_level(fenics.LogLevel.INFO) # in order to print solver info logs about Newton solver tolerances
 
-        """
-        t_in_GW = times[i+1]
-        t = t_in_GW * 604800 # in seconds
-        """
         t = times[i+1] # in seconds
         t_in_GW = t / 604800 
                 
@@ -541,13 +578,20 @@ if __name__ == '__main__':
 
         # Update growth tensor coefficients
         # ---------------------------------
+        # Update growth tensor coefficients
+        # ---------------------------------
+        if int(t_in_GW) in alphaTAN_values.keys():
+            alphaTAN = alphaTAN_values[int(t_in_GW)] # update the intensity of growth in Cortex (cf. dHCP data)
+        else:
+            alphaTAN = alphaTAN_values[26]
+
         #projection.local_project(grTAN * gm * grGrowthZones * alphaTAN * dt, S, dg_TAN)
         projection.local_project(grTAN * gm * alphaTAN * dt, S, dg_TAN)
         projection.local_project(grRAD * alphaRAD * dt, S, dg_RAD) 
 
         # Update growth tensor orientation (adaptative)
         # ---------------------------------------------
-        boundary_normals = growth.compute_topboundary_normals(mesh, ds(100), V) 
+        boundary_normals = growth.compute_topboundary_normals(mesh, ds(101), V) 
         projection.local_project(boundary_normals, V, BoundaryMesh_Nt)
         
         mesh_normals = growth.compute_mesh_projected_normals(V, 
@@ -569,24 +613,42 @@ if __name__ == '__main__':
 
         # Export displacement & other FEM functions
         ###########################################
-        FEniCS_FEM_Functions_file.write(u, t_in_GW)
-        
-        projection.local_project(PK1tot, Vtensor, PK1tot_T) # export Piola-Kirchhoff stress
-        FEniCS_FEM_Functions_file.write(PK1tot_T, t_in_GW)
-                
+        # model parameters
         FEniCS_FEM_Functions_file.write(d2s, t_in_GW)
         FEniCS_FEM_Functions_file.write(H, t_in_GW)
         FEniCS_FEM_Functions_file.write(gm, t_in_GW)
+        FEniCS_FEM_Functions_file.write(mu, t_in_GW)
+        FEniCS_FEM_Functions_file.write(K, t_in_GW)
 
+        projection.local_project(fenics.det(F), S, J) # local volume change (for incompressible material, should be close to 1)
+        FEniCS_FEM_Functions_file.write(J, t_in_GW)
+        
+        # growth tensor components
         FEniCS_FEM_Functions_file.write(BoundaryMesh_Nt, t_in_GW) 
         FEniCS_FEM_Functions_file.write(Mesh_Nt, t_in_GW) 
-
+        
         FEniCS_FEM_Functions_file.write(dg_TAN, t_in_GW)
         FEniCS_FEM_Functions_file.write(dg_RAD, t_in_GW)
         FEniCS_FEM_Functions_file.write(Fg_T, t_in_GW)
+        
+        # Analysis of the stress and strain
+        FEniCS_FEM_Functions_file.write(u, t_in_GW) # displacement field
+        
+        projection.local_project(Ee, Vtensor, Ee_T)
+        FEniCS_FEM_Functions_file.write(Ee_T, t_in_GW) # Green-Lagrange strain field
+        
+        projection.local_project(PK1tot, Vtensor, PK1tot_T) # Piola-Kirchhoff stress
+        FEniCS_FEM_Functions_file.write(PK1tot_T, t_in_GW)
 
-        FEniCS_FEM_Functions_file.write(mu, t_in_GW)
-        FEniCS_FEM_Functions_file.write(K, t_in_GW)
+        projection.local_project(F, Vtensor, F_T) # Deformation gradient
+        FEniCS_FEM_Functions_file.write(F_T, t_in_GW)
+
+        projection.local_project(Fe, Vtensor, Fe_T) # Elastic deformation gradient
+        FEniCS_FEM_Functions_file.write(Fe_T, t_in_GW)
+
+        gradFe_vec = fenics.as_vector([fenics.grad(Fe)[i, j, k] for i in range(3) for j in range(3) for k in range(3)])
+        projection.local_project(gradFe_vec, Vtensor_order3, gradFe_T) # ∇Fe
+        FEniCS_FEM_Functions_file.write(gradFe_T, t_in_GW)
 
         """
         if visualization == True:
@@ -601,16 +663,75 @@ if __name__ == '__main__':
             time.sleep(4.) 
         """
         
-        # Save energies https://fenicsproject.org/olddocs/dolfin/2019.1.0/python/demos/elastodynamics/demo_elastodynamics.py.html
-        ###############          
-        """
-        E_elas = fenics.assemble(0.5 * numerical_scheme_spatial.k(numerical_scheme_temporal.avg(u_old, u, alphaF), v_test, Fg_T, mu, K, gdim) ) 
-        E_kin = fenics.assemble(0.5 * numerical_scheme_spatial.m(rho, numerical_scheme_temporal.avg(a_old, a_new, alphaM), v_test) )
-        E_damp += dt * fenics.assemble( numerical_scheme_spatial.c(damping_coef, numerical_scheme_temporal.avg(v_old, v_new, alphaF), v_test) )
-        # E_ext += assemble( Wext(u-u_old) )
-        E_tot = E_elas + E_kin + E_damp #-E_ext
+        # Assess the numerical validity of the computational model
+        ##########################################################
+        # residual at each time step
+        # --------------------------
+        residual_vector = fenics.assemble(res) # Vector (V Space)
+        #residual_function.abs() # to get positive values of residual
+        residual_DOFs_array = residual_vector.get_local() # get numpy array of residuals (3 dofs per node)
+
+        residual_metrics[t_in_GW] = {}
+
+        # L2 norm of the residual matrix
+        residual_metrics[t_in_GW]["residual_vector_L2norm"] = residual_vector.norm('l2') # amplitude moyenne du residu sur tout le domaine
+
+        # infinite norm of the residual matrix
+        residual_metrics[t_in_GW]["residual_vector_normInfinite"] = np.max(np.abs(residual_DOFs_array)) # erreur max sur tout le domaine
+
+        # mean value of the residual matrix
+        residual_metrics[t_in_GW]["residual_vector_mean"] = np.mean(residual_DOFs_array) # (indication of global error)
+
+        # relative error
+        #solution_norm = fenics.assemble(u*u*fenics.dx)**0.5 # L2 Norm of the solution TODO: not working
+        #relative_error = residual_metrics["residual_vector_norm"] / solution_norm
+
+        # other metrics
+        residual_metrics[t_in_GW]["residual_vector_min"] = np.min(residual_DOFs_array)
+        residual_metrics[t_in_GW]["residual_vector_max"] = np.max(residual_DOFs_array)
+
+        with open(residual_path, 'w') as res_json_file:  
+            json.dump(residual_metrics, res_json_file, indent=0)
+
+        # cumul computational times at each step
+        # --------------------------------------
+        time_at_this_step = time.time()
+        cumulative_time = time_at_this_step - initial_time
         
-        energies[i+1, :] = np.array([E_elas, E_kin, E_damp, E_tot])
+        comp_time[t_in_GW] = {}
+        
+        comp_time[t_in_GW]["iteration"] = i
+        comp_time[t_in_GW]["total_iterations"] = Nsteps
+        comp_time[t_in_GW]["cumulative_computational_time"] = cumulative_time
+
+        with open(comp_time_path, 'w') as comp_time_json_file:  
+            json.dump(comp_time, comp_time_json_file, indent=0)
+
+        # internal energy
+        #################
+        # if energy int --> 0, displacement field satisfies the ODE
+        # Otherwise, there could be an issue in the numerical solving or in the definition of the BCs
+         
+        energy_internal[t_in_GW] = {}
+        
+        internal_deformation_energy_at_this_step = fenics.assemble(We * fenics.dx)
+        energy_internal[t_in_GW]["elastic_energy"] = internal_deformation_energy_at_this_step
+        
+        with open(energy_internal_path, 'w') as energy_internal_json_file:  
+            json.dump(energy_internal, energy_internal_json_file, indent=0)
+            
+
+        """
+        if visualization == True:
+            vedo.dolfin.plot(u, 
+                             mode='displace', 
+                             text="Step {} / {}:\nMesh at time {} / tmax={}\nDisplacement to be applied".format(step_to_be_applied, self.number_steps, t_i_plus_1, self.tmax), 
+                             style='paraview', 
+                             axes=4, 
+                             camera=dict(pos=(0., 0., -6.)), 
+                             interactive=False).clear() 
+            
+            time.sleep(4.) 
         """
         
         # Move mesh and boundary
@@ -625,7 +746,7 @@ if __name__ == '__main__':
         #print("\nupdating boundarymesh...")
         bmesh = fenics.BoundaryMesh(mesh, "exterior") # cortex envelop
 
-        bmesh_cortex = fenics.SubMesh(bmesh, boundaries_surface, 100)
+        bmesh_cortex = fenics.SubMesh(bmesh, boundary_face_marker, 101)
         
         bmesh_cortexsurface_bbtree = fenics.BoundingBoxTree()
         bmesh_cortexsurface_bbtree.build(bmesh_cortex) 

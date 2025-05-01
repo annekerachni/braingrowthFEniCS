@@ -24,12 +24,12 @@ def read_nifti(img_path):
     return img_nib, img_nib_data, affine, header, shape 
 
 @jit(parallel=True) #, forceobj=True)
-def generate_binary_mask_from_selected_parcels(segmentation_file_path, selected_parcels): 
+def generate_binary_mask_from_selected_parcels(provided_parcels_nib_data, selected_parcels): 
     """
     Generate binary mask from the selected parcels among the provided segmentation parcels. 
     """
-    provided_parcels_nib = nib.load(segmentation_file_path)  
-    provided_parcels_nib_data = provided_parcels_nib.get_fdata()
+    #provided_parcels_nib = nib.load(segmentation_file_path) # nib.load incompatible with nopython mode --> use object mode "forceobj=True"
+    #provided_parcels_nib_data = provided_parcels_nib.get_fdata()
     
     binary_mask_data = provided_parcels_nib_data.copy()
 
@@ -51,9 +51,11 @@ def apply_binary_mask_to_nifti(img_nib_data, binary_mask_data):
     img_masked_data = img_nib_data * binary_mask_data
     return img_masked_data
 
-def write_masked_nifti(img_masked_data, affine, masked_img_output_path):
+def write_masked_nifti(tGW, img_masked_data, affine, masked_img_output_path):
     img_masked = nib.Nifti1Image(img_masked_data, affine=affine) 
-    nib.save(img_masked, masked_img_output_path)  
+    nib.save(img_masked, masked_img_output_path) 
+
+    print("masked nifti at " + str(tGW) + " was registered.") 
     return
 
 def show_slices(slices): # code source: https://nipy.org/nibabel/coordinate_systems.html
@@ -68,14 +70,18 @@ import argparse
 import json
 if __name__ == '__main__':
 
+    import sys, os
+    sys.path.append(sys.path[0]) # BrainGrowth3D_MRI/niftitomesh/nifti_image2mesh
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(sys.path[0])))) # braingrowthFEniCS
+
     parser = argparse.ArgumentParser(description='Mask brain MRI nifti with selected parcels from provided segmentation')
     
     parser.add_argument('-i', '--inputdata', help='Path to the orginal T2w (.nii) folder  + Path to the associated segmentations folder (.nii)', type=json.loads, required=False, 
                         default={ 
                                  
-                                 "t2s_folder_path": '/home/anne/Desktop/FA/dHCP_volume/transformed_niftis/',
+                                 "t2s_folder_path": './data/dCHP_volume_21_to_36GW/structural_transformed/',
                                 
-                                 "segmentations_folder":'/home/anne/Desktop/FA/dHCP_volume/transformed_niftis/'
+                                 "segmentations_folder":'./data/dCHP_volume_21_to_36GW/parcellations_transformed/'
                                  
                                  } )
     
@@ -107,7 +113,7 @@ if __name__ == '__main__':
                                 }) # e.g. dhcp segmentation parcels (See data from https://gin.g-node.org/kcl_cdb/fetal_brain_mri_atlas/src/master/parcellations)
     
     parser.add_argument('-o', '--outputmaskednifti_folder', help='Path to masked T2w (.nii.gz) folder', type=str, required=False, 
-                        default='/home/anne/Desktop/FA/dHCP_volume/transformed_niftis/')
+                        default='./data/dCHP_volume_21_to_36GW/structural_transformed_masked/')
     
     parser.add_argument('-d', '--displaymode', help='Display nifti before and after masking', type=bool, required=False, 
                         default=False)
@@ -122,7 +128,7 @@ if __name__ == '__main__':
     # Get the data of the original structural nifti
     ###############################################
     
-    for tGW in [21, 28, 36]:
+    for tGW in range(29, 37): # range(21, 37) for 21 to 36GW
         
         # read original T2w nifti
         t2_path = t2s_folder_path + 'transformed-t2-t{}.00.nii.gz'.format(tGW)
@@ -165,7 +171,11 @@ if __name__ == '__main__':
 
         # define and compute labels of interest (e.g. left cortex + left WM)
         segmentation_path = segmentations_folder_path + 'transformed-tissue-t{}.00_dhcp-19.nii.gz'.format(tGW)
-        binary_mask_data = generate_binary_mask_from_selected_parcels(segmentation_path, selected_parcels)
+        
+        provided_parcels_nib = nib.load(segmentation_path) # load data at the exterior of the below function to be able to parallelize it (since nib.load incompatible with numba nopython mode)
+        provided_parcels_nib_data = provided_parcels_nib.get_fdata()
+        
+        binary_mask_data = generate_binary_mask_from_selected_parcels(provided_parcels_nib_data, selected_parcels)
 
         # apply selected binar parcellation to original nifti 
         img_masked_data = apply_binary_mask_to_nifti(img_nib_data, binary_mask_data)
@@ -185,6 +195,6 @@ if __name__ == '__main__':
         # Save the masked nifti
         #######################   
         output_masked_nifti_path = args.outputmaskednifti_folder + 'transformed-dhcp{}GW_masked.nii.gz'.format(tGW)
-        write_masked_nifti(img_masked_data, affine, output_masked_nifti_path)
+        write_masked_nifti(tGW, img_masked_data, affine, output_masked_nifti_path)
 
         #print("nifti was masked and saved.")

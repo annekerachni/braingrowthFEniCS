@@ -49,9 +49,9 @@ def refine_mesh(mesh_to_refine_XMLpath, refined_mesh_XMLpath, visualization_mode
     return
 
 
-def refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtree, mesh_spacing, refinement_width_coef): 
+def refine_mesh_on_boundary(mesh_to_refine, bmesh_bbtree, mesh_spacing, refinement_width_coef): 
         """ 
-        Refine mesh near the brain surface boundary.
+        Refine mesh near any surface boundary (identified by the tree of coordinates "bmesh_bbtree").
         Refined width from boundary = refinement_width_coef * min_mesh_spacing (refinement_width_coef: number of time the minmeshspacing)
         """
 
@@ -61,7 +61,7 @@ def refine_mesh_on_brainsurface_boundary(mesh_to_refine, brainsurface_bmesh_bbtr
         cells_to_refine.set_all(False)
         for cell in fenics.cells(mesh_to_refine):
             p = cell.midpoint()
-            _, distance = brainsurface_bmesh_bbtree.compute_closest_entity(p) # compute distance of p to boundingbox
+            _, distance = bmesh_bbtree.compute_closest_entity(p) # compute distance of p to boundingbox
             if distance < refinement_width_coef * mesh_spacing: 
                 cells_to_refine[cell] = True
 
@@ -86,13 +86,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Refine mesh near by surface boundary')
 
     parser.add_argument('-i', '--inputmesh', help='Path to 3D mesh to refine (.xml, .xdmf)', type=str, required=False, 
-                        default='./data/brain.xdmf') 
+                        default='./data/dHCP_surface_atlas_21GW/fetal_week21_pial_surf_32536faces_106362tets.xdmf') 
     
     #parser.add_argument('-o', '--outputmesh', help='Path to output folder', type=str, required=True, 
     #                    default='./data/') 
 
     parser.add_argument('-rfc', '--refinementwidthcoef', help='refinement width coef (integer > 0)', type=int, required=False, 
-                        default=5)  
+                        default=2)  
     # if 0: no refinement 
     # refinement for Points located (refinement_width_coef*min mesh spacing)mm away from the brainsurface boundary
     
@@ -131,10 +131,10 @@ if __name__ == '__main__':
     brainsurface_bmesh_bbtree.build(brainsurface_bmesh)  
 
     # refined mesh
-    refined_FEniCSmesh = refine_mesh_on_brainsurface_boundary(FEniCSmesh_to_refine, 
-                                                              brainsurface_bmesh_bbtree, 
-                                                              hmin, 
-                                                              refinement_width_coef)
+    refined_FEniCSmesh = refine_mesh_on_boundary(FEniCSmesh_to_refine, 
+                                                 brainsurface_bmesh_bbtree, 
+                                                 hmin, 
+                                                 refinement_width_coef)
     
     # generate XDMF refined mesh
     # --------------------------

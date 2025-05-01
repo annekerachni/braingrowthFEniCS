@@ -192,7 +192,7 @@ def reorient_mesh(mesh, characteristics, center_of_gravity):
 
     max_distance_to_COG = max( max(maxX, maxY), maxZ)
 
-    # longitudinal axis of the brain should be oriented in the Y direction (RAS orientation)
+    # longitudinal axis of the brain should be oriented in the Y direction (RAS+ orientation)
     # supposing the longidtudinal axis of the initial mesh is well parallel to one axis x, y or z. If oblique initial mesh, does not wotk.
     if max_distance_to_COG == maxX:
         # Normalize coordinates: change referential to the COG one and normalize coordinates with maximum distance to barycenter 

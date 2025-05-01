@@ -137,9 +137,9 @@ if __name__ == '__main__':
         
         #import braingrowth_3D.MRI_based_biophysical_quasistatic_3D.niftitomesh
         
-        from BrainGrowth3D_MRI.niftitomesh.niftivalues2meshnodes import transfer_niftivalues_to_meshnodes_withITK_ECCOMAS # to load MRI data onto mesh nodes
+        from BrainGrowth3D_MRI.niftitomesh.niftivalues2meshnodes import transfer_niftivalues_to_meshnodes_withITK # to load MRI data onto mesh nodes
         from BrainGrowth3D_MRI.MRI_driven_parameters.FA_2_growthcoef import load_mesh_with_growthcoef_ECCOMAS_XDMF # to compute alphaTAN from FA nodal values
-        from BrainGrowth3D_MRI.MRI_driven_parameters.Segmentation_to_grTAN_for_cortical_thickness import load_mesh_with_grTAN_ECCOMAS # to get Cortical delineation from Segmentation label values
+        from BrainGrowth3D_MRI.MRI_driven_parameters.Segmentation_to_grTAN_for_cortical_thickness import load_mesh_with_grTAN # to get Cortical delineation from Segmentation label values
 
         from FEM_biomechanical_model import mappings
         
@@ -186,7 +186,7 @@ if __name__ == '__main__':
             subdomains.set_all(0)
         
             # load segmentation
-            mesh_meshio_Labels = transfer_niftivalues_to_meshnodes_withITK_ECCOMAS.load_Segmentation_onto_mesh_nodes(mesh0, 
+            mesh_meshio_Labels = transfer_niftivalues_to_meshnodes_withITK.load_Segmentation_onto_mesh_nodes(mesh0, 
                                                                                                                      input_parcellations_dict[tGW], 
                                                                                                                      interpolation_mode='nearest_neighbor') # interpolation_mode: 'nearest_neighbor'; 'linear'
             
@@ -198,7 +198,7 @@ if __name__ == '__main__':
             
             grTAN = fenics.Function(S, name="grTANCortexDelineation")
             
-            grTAN.assign( load_mesh_with_grTAN_ECCOMAS.bilayer_tangential_growth_ponderation_from_SegmentationLabels_WHOLEMESH(grTAN, 
+            grTAN.assign( load_mesh_with_grTAN.bilayer_tangential_growth_ponderation_from_SegmentationLabels_WHOLEMESH(grTAN, 
                                                                                                                                vertex2dofs_S, 
                                                                                                                                mesh_meshio_Labels) )
             """

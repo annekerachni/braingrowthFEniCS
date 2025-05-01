@@ -1,5 +1,3 @@
-# FEniCS-based quasistatic brain growth model (purely solid continuum mechanics conservation law + penalization of contact between the two hemispheres)
-
 import sys, os
 os.environ['OMP_NUM_THREADS'] = '4'  # Set the number of OpenMP CPUs to use (the MUMPS linear solver, which is the FEniCS element based on PETSc using parallelization, is based on OpenMP)
 # os.environ['OMP_NUM_THREADS'] required to be imported prior to fenics
@@ -27,41 +25,28 @@ from utils.converters import convert_meshformats
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='braingrowthFEniCS: brain growth quasistatic 3D model')
+    parser = argparse.ArgumentParser(description='braingrowthFEniCS: FEniCS-based quasistatic brain growth model. ' \
+    'The computational model implements a purely solid continuum mechanics conservation law and the penalization of contact between the two hemispheres using one fictive rigid plane.')
 
-    parser.add_argument('-i', '--input', help='Input mesh path (.xml, .xdmf); mesh unit: either in millimeters, either in meters; mesh orientation: sagittal X, front X+, axial Y, front Y+, coronal Z, top Z+', type=str, required=False, 
-                        default="./data/dHCP_surface_vs_volume_RAW/Vf/dhcp_surface_t21_raw_130000faces_455983tets_reoriented_dHCPVolume.xdmf") 
-                        # from dHCP surface gifti mesh: "./data/dHCP_surface_vs_volume_RAW/Vf/dhcp_surface_t21_raw_130000faces_455983tets_reoriented_dHCPVolume.xdmf"--> in millimeters
-                        # from dHCP volume niftis: "./data/dHCP_surface_vs_volume_RAW/Vf/dhcp_volume_t21_raw_130000faces_480112tets.xdmf" -->  in millimeters
-
-                        # from dHCP volume niftis: "./data/21_28_36GW/transformed_niftis_meshes/transformed_dhcp21GW_isotropic_smoothed_TaubinSmooth50_refinedWidthCoef10.xdmf" (719399 tets)
-                        # from dHCP surface gifti mesh: "./data/dHCP_surface/fetal_week21_left_right_merged_V2.xdmf" (455351 tets)
+    parser.add_argument('-i', '--input', help='Input mesh path (.xml, .xdmf); mesh unit: either in millimeters, either in meters; mesh orientation RAS+: Right side of the brain X+, Anterior side Y+, Superior side Z+', type=str, required=False, 
+                        default="./data/dHCPsurface21_pial_129960faces_456026tets_RAS.xdmf") # brain mesh in millimeters, in RAS+ orientation
     
     parser.add_argument('-c', '--convertmesh0frommillimetersintometers', help='Convert mesh from millimeters into meters', type=bool, required=False, default=True)
     
     parser.add_argument('-p', '--parameters', help='Simulation input parameters', type=json.loads, required=False, 
-                        default={"H0": 1.8e-3, # [m]
-                                 "muCortex": 300, "muCore": 100, # [Pa] 
-                                 "nu": 0.45, 
-                                 "alphaTAN": 2.0e-7, "alphaRAD": 0.5e-7, "grTAN": 1.0, "grRAD": 1.0, 
-                                 "epsilon_n": 5e5, # penalty coefficient (contact mechanics)
+                        default={"H0": 1.5e-3, # [m]
+                                 "muCortex": 1500, "muCore": 300, # [Pa] 
+                                 "nu": 0.45, # [-]
+                                 "alphaTAN": 2.0e-7, "alphaRAD": 0.0, # [s⁻¹]
+                                 "grTAN": 1.0, "grRAD": 1.0, # [-] 
+                                 "epsilon_n": 5e5, # [kg.m⁻².s⁻²] penalty coefficient (contact mechanics)
                                  "T0_in_GW": 21.0, "Tmax_in_GW": 36.0, "dt_in_seconds": 43200, 
                                  "linearization_method":"newton", 
-                                 "newton_absolute_tolerance":1E-9, "newton_relative_tolerance":1E-6, "max_iter": 10, 
+                                 "newton_absolute_tolerance":1E-9, "newton_relative_tolerance":1E-6, "max_iter": 15, 
                                  "linear_solver":"mumps"}) 
-    
-                                # dt_in_seconds
-                                # -------------
-                                # 1 GW = 604800s 
-                                # 0.1 GW = 60480 s
-                                # 1500 s ~ 0.0025 GW 
-                                # 3600 s (1h) ~ 0.006 GW
-                                # 7200 s (2h) ~ 0.012 GW --> alphaTAN = 7.0e-6
-                                # 43200 s (1/2 day) ~ 0.07 GW --> alphaTAN = 1.16e-6
-                                # 86400 s (1 day) ~ 0.14 GW
 
     parser.add_argument('-o', '--output', help='Output folder path', type=str, required=False, 
-                        default='./results/brain_growth_OneRigidPlane_penaltyMethodCorrected_dirichletEllipsoidVZ/') 
+                        default='./results/brain_growth_OneContactPlane/') 
                            
     #parser.add_argument('-v', '--visualization', help='Visualization during simulation', type=bool, required=False, default=False)
     parser.add_argument('-v', '--visualization', help='Visualization during simulation', action='store_true')
@@ -81,21 +66,21 @@ if __name__ == '__main__':
     inputmesh_format = inputmesh_path.split('.')[-1]
 
     if inputmesh_format == "xml":
-        mesh_WholeBrain = fenics.Mesh(inputmesh_path)
+        mesh = fenics.Mesh(inputmesh_path)
 
     elif inputmesh_format == "xdmf":
-        mesh_WholeBrain = fenics.Mesh()
+        mesh = fenics.Mesh()
         with fenics.XDMFFile(inputmesh_path) as infile:
-            infile.read(mesh_WholeBrain)
+            infile.read(mesh)
 
     # convert initial input whole brain mesh and compute its characteristics
     if args.convertmesh0frommillimetersintometers == True:
-        mesh_WholeBrain = preprocessing.converting_mesh_from_millimeters_into_meters(mesh_WholeBrain)
+        mesh = preprocessing.converting_mesh_from_millimeters_into_meters(mesh)
     
-    bmesh_WholeBrain = fenics.BoundaryMesh(mesh_WholeBrain, "exterior") 
-    characteristics = preprocessing.compute_geometrical_characteristics(mesh_WholeBrain, bmesh_WholeBrain)
+    bmesh = fenics.BoundaryMesh(mesh, "exterior") 
+    characteristics = preprocessing.compute_geometrical_characteristics(mesh, bmesh)
     center_of_gravity = preprocessing.compute_center_of_gravity(characteristics) 
-    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(mesh_WholeBrain)
+    min_mesh_spacing, average_mesh_spacing, max_mesh_spacing = preprocessing.compute_mesh_spacing(mesh)
     
     print('input mesh characteristics: {}'.format(characteristics))
     print('input mesh COG = [xG0:{}, yG0:{}, zG0:{}]'.format(center_of_gravity[0], center_of_gravity[1], center_of_gravity[2]))
@@ -103,17 +88,17 @@ if __name__ == '__main__':
     print("input mesh mean mesh spacing: {:.3f} mm".format(average_mesh_spacing))
     print("input mesh max mesh spacing: {:.3f} mm".format(max_mesh_spacing)) 
     
-    # Brain mesh properties to define Dirichlet inner ellipsoid zone
-    brain_maxX, brain_minX = np.max(mesh_WholeBrain.coordinates()[:,0]), np.min(mesh_WholeBrain.coordinates()[:,0])
-    brain_maxY, brain_minY = np.max(mesh_WholeBrain.coordinates()[:,1]), np.min(mesh_WholeBrain.coordinates()[:,1])
-    brain_maxZ, brain_minZ =  np.max(mesh_WholeBrain.coordinates()[:,2]), np.min(mesh_WholeBrain.coordinates()[:,2]) 
+    # Brain mesh properties 
+    brain_maxX, brain_minX = np.max(mesh.coordinates()[:,0]), np.min(mesh.coordinates()[:,0])
+    brain_maxY, brain_minY = np.max(mesh.coordinates()[:,1]), np.min(mesh.coordinates()[:,1])
+    brain_maxZ, brain_minZ =  np.max(mesh.coordinates()[:,2]), np.min(mesh.coordinates()[:,2]) 
     
     dX = brain_maxX - brain_minX
     dY = brain_maxY - brain_minY
     dZ = brain_maxZ - brain_minZ
     
-    hmin_symbolic = fenics.CellDiameter(mesh_WholeBrain) # symbolic expression providing cell diameter [m] for each cell of the mesh 
-    Z = fenics.FunctionSpace(mesh_WholeBrain, "DG", 0)
+    hmin_symbolic = fenics.CellDiameter(mesh) # symbolic expression providing cell diameter [m] for each cell of the mesh 
+    Z = fenics.FunctionSpace(mesh, "DG", 0)
     hmin_symbolic_proj = fenics.project(hmin_symbolic, Z) 
     min_cell_size = np.nanmin(hmin_symbolic_proj.vector()[:])
     average_cell_size = np.nanmean(hmin_symbolic_proj.vector()[:])
@@ -123,23 +108,7 @@ if __name__ == '__main__':
     hmin = min_cell_size
     hmean = average_cell_size
     hmax = max_cell_size
-    
-    # Export the characteristics of mesh_TO 
-    # -------------------------------------
-    #fenics.File(args.output + "mesh_T0.xml") << mesh
-    """
-    with fenics.XDMFFile(MPI.COMM_WORLD, os.path.join(args.output, "mesh_T0.xdmf")) as xdmf:
-            xdmf.write(mesh)
-            
-    convert_meshformats.xml_to_vtk(args.output + "mesh_T0.xml", args.output + "mesh_T0.vtk")
-    export_simulation_outputmesh_data.export_resultmesh_data(args.output + "analytics/",
-                                                             args.output + "mesh_T0.vtk",
-                                                             args.parameters["T0"],
-                                                             0,
-                                                             0.0,
-                                                             "mesh_T0.txt")
-    """
-    
+        
     #####################################################
     ###################### Parameters ###################
     #####################################################
@@ -147,7 +116,7 @@ if __name__ == '__main__':
     # Cortex thickness
     ##################
     H0 = args.parameters["H0"]
-    cortical_thickness = fenics.Expression('H0 + 0.01*t', H0=H0, t=0.0, degree=0)
+    cortical_thickness = fenics.Expression('H0 + 0.01*t', H0=H0, t=0.0, degree=0) # eventually modifiy the time function of cortical thickness
     gdim=3
 
     # Elastic parameters
@@ -157,8 +126,8 @@ if __name__ == '__main__':
     
     nu = fenics.Constant(args.parameters["nu"])
     
-    KCortex = fenics.Constant( 2*muCortex.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # 3D
-    KCore = fenics.Constant( 2*muCore.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # 3D
+    KCortex = fenics.Constant( 2*muCortex.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # formula for 3D geometries. source: https://en.wikipedia.org/wiki/Lam%C3%A9_parameters
+    KCore = fenics.Constant( 2*muCore.values()[0] * (1 + nu.values()[0]) / (3*(1 - 2*nu.values()[0])) ) # formula for 3D geometries
     
     # Growth parameters
     ###################
@@ -176,7 +145,7 @@ if __name__ == '__main__':
     Tmax_in_GW = args.parameters["Tmax_in_GW"]
     Tmax_in_seconds = Tmax_in_GW * 604800
 
-    dt_in_seconds = args.parameters["dt_in_seconds"] # --> dt = 1500/2000seconds to 1hour max (for the result not to variate too much)
+    dt_in_seconds = args.parameters["dt_in_seconds"] 
     dt_in_GW = dt_in_seconds / 604800
     print('\ntime step: {} seconds <-> {:.3f} GW'.format(dt_in_seconds, dt_in_GW)) # in original BrainGrowth: dt = 0,000022361 ~ 2.10⁻⁵
 
@@ -200,7 +169,6 @@ if __name__ == '__main__':
     FEniCS_FEM_Functions_file.parameters["flush_output"] = True
     FEniCS_FEM_Functions_file.parameters["functions_share_mesh"] = True
     FEniCS_FEM_Functions_file.parameters["rewrite_function_mesh"] = True
-
     
     numerical_metrics_path = args.output + "numerical_metrics/"
 
@@ -218,110 +186,31 @@ if __name__ == '__main__':
     energy_internal_path = os.path.join(numerical_metrics_path, 'internal_energies.json') 
     energy_internal = {} 
 
+    cumulative_displacement_path = os.path.join(numerical_metrics_path, 'cumulative_displacement.json') 
+    cumulative_displacement = {} 
+
     ##################################################
     ###################### Problem ###################
     ##################################################
-    
-    # Subdomains
-    ############
-    build_mesh_cell_markers = fenics.MeshFunction("size_t", mesh_WholeBrain, mesh_WholeBrain.topology().dim()) 
-    build_mesh_cell_markers.set_all(0)
-    
-    # Cut brain mesh with ellipsoid Ventricular Zone (to define Dirichlet BCs)
-    ##########################################################################
-    print("\ncutting the brain mesh with an ellipsoid shape standing for the Ventricular Zone (to be used to define the Dirichlet BCs inside of the brain)...")
-    
-    S_WholeBrain = fenics.FunctionSpace(mesh_WholeBrain, "CG", 1) 
-    
-    class EllispoidVentricularZone(fenics.UserExpression):
-        def __init__(self, radius_VZ, COG_bb, dX, dY, dZ, dilate_coef_x, dilate_coef_y, dilate_coef_z): 
-            fenics.UserExpression.__init__(self)
-            self.radius_VZ = radius_VZ
-            self.COG_bb = COG_bb
-            self.dilate_coef_x = dilate_coef_x
-            self.dilate_coef_y = dilate_coef_y
-            self.dilate_coef_z = dilate_coef_z
-            self.dX, self.dY, self.dZ = dX, dY, dZ 
-            
-        def eval(self, value, x):
-            #value[0] = x[0]**2 + x[1]**2 + x[2]**2 - 1  
-            #tol = 1E-14
-            value[0] = ((x[0]- self.COG_bb[0])/self.dilate_coef_x)**2 + ((x[1] - self.COG_bb[1])/self.dilate_coef_y)**2 + ((x[2]-self.COG_bb[2])/self.dilate_coef_z)**2 - self.radius_VZ**2 #+ tol)
-
-        def value_shape(self):
-            return () # returns a scalar
-    
-    COG_bb = 0.5*(brain_minX + brain_maxX), 0.5*(brain_minY + brain_maxY), 0.5*(brain_minZ + brain_maxZ)
-    dilate_coef_x, dilate_coef_y, dilate_coef_z = 0.5*dX, 0.5*dY, 0.5*dZ
-    radius_VZ = 1.0/10
-
-    ellipsoid_ventricular_zone = EllispoidVentricularZone(radius_VZ, COG_bb, dX, dY, dZ, dilate_coef_x, dilate_coef_y, dilate_coef_z)
-    
-    
-    """ellipsoid_ventricular_zone_2 = fenics.Expression("((x[0]- COG_bb_X)/dilate_coef_x)**2 + ((x[1] - COG_bb_Y)/dilate_coef_y)**2 + ((x[2]-COG_bb_Z)/dilate_coef_z)**2 - (radius_VZ**2 + tol)",  
-                                                    degree=2,
-                                                    COG_bb_X = COG_bb[0], dilate_coef_x = dilate_coef_x,
-                                                    COG_bb_Y = COG_bb[1], dilate_coef_y = dilate_coef_y,
-                                                    COG_bb_Z = COG_bb[2], dilate_coef_z = dilate_coef_z,
-                                                    radius_VZ=radius_VZ, tol=1E-14)"""
-
-    # project VZ onto the V FEM space
-    zone_to_cut_scalar_FEM_function = fenics.project(ellipsoid_ventricular_zone, S_WholeBrain)
-    #zone_to_cut_FEM_function = projection.local_project(ellipsoid_ventricular_zone, V, None)
-    
-    # 
-    """cell_markers = fenics.MeshFunction("size_t", mesh_WholeBrain, mesh_WholeBrain.topology().dim())
-    cell_markers.set_all(1)"""
-
-    for cell in fenics.cells(mesh_WholeBrain):
-        point = cell.midpoint()
-        if zone_to_cut_scalar_FEM_function(point) <= 0:  
-            build_mesh_cell_markers[cell] = 10
-    # to check labelling of the VZ zone: build_mesh_cell_markers.array(); np.where(build_mesh_cell_markers.array() == 10)
-            
-    # get submeshes
-    ellipsoid_VZ_mesh = fenics.SubMesh(mesh_WholeBrain, build_mesh_cell_markers, 10)
-    mesh = fenics.SubMesh(mesh_WholeBrain, build_mesh_cell_markers, 0)
-    bmesh = fenics.BoundaryMesh(mesh, "exterior") 
-    
-    # export brain mesh with ellipsoid VZ inner boundary
-    with fenics.XDMFFile("./data/dHCP_surface_vs_volume_RAW/Vf/dhcp_surface_t21_raw_130000faces_455983tets_reoriented_dHCPVolume_in_meters_with_VZboundary.xdmf") as outfile:
-        outfile.write(mesh)
         
-    # Define FEM Function Spaces associated to the new mesh (with cut VZ)
-    #####################################################################
+    # Define FEM Function Spaces associated to the new mesh 
+    ########################################################
     print("\ncreating Lagrange FEM function spaces and functions associated to the new mesh (with cut VZ)...")
 
     # Scalar Function Spaces
     S = fenics.FunctionSpace(mesh, "CG", 1) 
-    S_cortexsurface = fenics.FunctionSpace(bmesh, "CG", 1) 
-    
+    vertex2dofs_S = mappings.vertex_to_dof_ScalarFunctionSpace(S) # mapping: from vertex to DOF in the whole mesh
+
     # Vector Function Spaces
     V = fenics.VectorFunctionSpace(mesh, "CG", 1)
-    V_cortexsurface = fenics.VectorFunctionSpace(bmesh, "CG", 1) 
-
+    vertex2dofs_V = mappings.vertex_to_dofs_VectorFunctionSpace(V, gdim) #  mapping: from vertex to DOFs in the whole mesh --> used to compute Mesh_Nt
+    
     # Tensor Function Spaces
     #Vtensor = fenics.TensorFunctionSpace(mesh, "DG", 0)
     Vtensor = fenics.TensorFunctionSpace(mesh,'CG', 1, shape=(3,3)) # https://fenicsproject.discourse.group/t/outer-product-evaluation/2159; https://fenicsproject.discourse.group/t/how-to-choose-projection-space-for-stress-tensor-post-processing/5568/4
     
-    # Mappings
-    ##########
-    print("\ncomputing mappings...")
-    # From vertex to DOF in the whole mesh --> used to compute Mesh_Nt
-    # ----------------------------------------------------------------
-    vertex2dofs_S = mappings.vertex_to_dof_ScalarFunctionSpace(S) # mapping: from vertex to DOF in the whole mesh
-    vertex2dofs_V = mappings.vertex_to_dofs_VectorFunctionSpace(V, gdim)
-    vertex2dofs_B = mappings.vertex_to_dofs_VectorFunctionSpace(V_cortexsurface, gdim)
+    Vtensor_order3 = fenics.VectorFunctionSpace(mesh, "DG", 0, dim=27) # to project grad(Fe)
 
-    # From the surface mesh (cortex envelop) to the whole mesh (B_2_V_dofmap; vertexB_2_dofsV_mapping --> used to compute Mesh_Nt)
-    # --------------------------------------------------------
-    B_2_V_dofmap, vertexB_2_dofsV_mapping = mappings.surface_to_mesh_V(gdim, V, V_cortexsurface, vertex2dofs_B)
-    Sboundary_2_S_dofmap, vertexBoundaryMesh_2_dofScalarFunctionSpaceWholeMesh_mapping = mappings.surface_to_mesh_S(S, S_cortexsurface)
-    
-    # From the whole mesh to the surface mesh (to be use for projections onto surface in contact process)
-    # ---------------------------------------
-    #vertexWholeMeshIDX_to_projectedVertexBoundaryMeshIDX_mapping_t0 = mappings.mesh_to_surface_V(mesh.coordinates(), bmesh.coordinates()) # at t=0. (keep reference projection before contact for proximity node to deep tetrahedra vertices)
-    
     # FEM Functions
     ###############
 
@@ -346,13 +235,20 @@ if __name__ == '__main__':
     BoundaryMesh_Nt = fenics.Function(V, name="BoundaryMesh_Nt")
     Mesh_Nt = fenics.Function(V, name="Mesh_Nt")
 
-    nabla_Fe = fenics.Function(V, name="NablaFe") # to express local gradient of the deformation ~ i.e. curvature
-
     # Vector functions of Vtensor
     Fg_T = fenics.Function(Vtensor, name="Fg")    
     PK1tot_T = fenics.Function(Vtensor, name="PK1tot") 
     Ee_T = fenics.Function(Vtensor, name="E_strain") 
+
+    F_T = fenics.Function(Vtensor, name="F") 
+    Fe_T = fenics.Function(Vtensor, name="Fe") 
+    gradFe_T = fenics.Function(Vtensor_order3, name="gradFe") 
     
+    # Subdomains
+    ############
+    cell_markers = fenics.MeshFunction("size_t", mesh, mesh.topology().dim()) 
+    cell_markers.set_all(0)
+
     # Boundaries
     ############
     print("\ncomputing and marking boundaries...")
@@ -361,109 +257,45 @@ if __name__ == '__main__':
 
     # initialize boundaries   
     # ---------------------
-    volume_facet_marker = fenics.MeshFunction("size_t", mesh, mesh.topology().dim() - 1) # size: facets --> mesh.num_facets() => number of faces in the volume
+    volume_facet_marker = fenics.MeshFunction("size_t", mesh, mesh.topology().dim() - 1) # size: facets --> mesh.num_facets() => number of faces in the volume. / Each facet is labelled; in case "on_boundary" is mentionned, only the edges of the face are labelled
     volume_facet_marker.set_all(100)
     
-    boundary_face_marker = fenics.MeshFunction('size_t', bmesh, bmesh.topology().dim(), 0) # size: n_faces (at surface) => number of faces at the surface
+    boundary_face_marker = fenics.MeshFunction('size_t', bmesh, bmesh.topology().dim(), 0) # size: n_faces (at surface) --> bmesh.num_faces() => number of faces at the surface / Each surface edge is labelled
+    #boundary_face_marker = fenics.MeshFunction('size_t', mesh, mesh.topology().dim() - 1)
     boundary_face_marker.set_all(100)
-
+    
     # Label boundaries
     ##################
-    # mark cortex surface
-    # -------------------
+    # mark cortex surface (and at this stage also the VZ inner boundary)
+    # ------------------------------------------------------------------
     class CortexSurface(fenics.SubDomain): 
 
-        def __init__(self, bmesh_cortexsurface_bbtree):
+        def __init__(self, bmesh_bbtree):
             fenics.SubDomain.__init__(self)
-            self.bmesh_cortexsurface_bbtree = bmesh_cortexsurface_bbtree
+            self.bmesh_bbtree = bmesh_bbtree
 
         def inside(self, x, on_boundary): 
-            _, distance = self.bmesh_cortexsurface_bbtree.compute_closest_entity(fenics.Point(*x)) # compute_closest_point() https://fenicsproject.org/olddocs/dolfin/1.5.0/python/programmers-reference/cpp/mesh/GenericBoundingBoxTree.html
+            _, distance = self.bmesh_bbtree.compute_closest_entity(fenics.Point(*x)) # compute_closest_point() https://fenicsproject.org/olddocs/dolfin/1.5.0/python/programmers-reference/cpp/mesh/GenericBoundingBoxTree.html
             return fenics.near(distance, fenics.DOLFIN_EPS) # returns Points
 
     cortexsurface = CortexSurface(bmesh_cortexsurface_bbtree)
     cortexsurface.mark(volume_facet_marker, 101, check_midpoint=False) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
-    cortexsurface.mark(boundary_face_marker, 101, check_midpoint=False)
+    #cortexsurface.mark(boundary_face_marker, 101, check_midpoint=False)
     
-    # build cortical surface mesh corresponding to the surface elements labelled 101, exclusively
-    bmesh_cortex = fenics.SubMesh(bmesh, boundary_face_marker, 101)
-    #bmesh_cortexsurface_bbtree = fenics.BoundingBoxTree()
-    #bmesh_cortexsurface_bbtree.build(bmesh_cortex)  
-
     # brain regions growth mask
     # -------------------------  
-    print("mark no-growth brain regions (e.g. 'longitudinal fissure' - 'ventricules' - 'mammilary bodies')...") # code source: T.Tallinen et al. 2016. See detail in https://github.com/rousseau/BrainGrowth/blob/master/geometry.py   
-    """
-    # initial value from T.Tallinen for delimating growth zones from inner zones: 0.6
-    pond_Y = (abs(np.min(mesh.coordinates()[:,1])) + abs(np.max(mesh.coordinates()[:,1])))/2 # |dY|/2
-    pond_Z = (abs(np.min(mesh.coordinates()[:,2])) + abs(np.max(mesh.coordinates()[:,2])))/2 # |dZ|/2
-    new_critical_value = (pond_Y - H0)#0.6 * pond_Y
-    """
-
-    """for vertex, scalarDOF in enumerate(vertex2dofs_S):"""
-    """
-    # sphere filter but is 
-    
-    rqp = np.linalg.norm( np.array([  0.714*(mesh.coordinates()[vertex, 0] + 0.1), 
-                                                mesh.coordinates()[vertex, 1], 
-                                                mesh.coordinates()[vertex, 2] - 0.05  ]))"""
-    """
-    # sphere filter
-    
-    rqp = np.linalg.norm( np.array([  (mesh.coordinates()[vertex, 0]), 
-                                        mesh.coordinates()[vertex, 1], 
-                                        mesh.coordinates()[vertex, 2] - 0.10  ]))"""
-    """
-    # ellipsoid filter     
-                            
-    rqp = np.linalg.norm( np.array([    0.714 * mesh.coordinates()[vertex, 0], 
-                                                mesh.coordinates()[vertex, 1], 
-                                        0.9 *  (mesh.coordinates()[vertex, 2]) - 0.1*pond_Z ])) 
-
-    """
-
-    """
-    # ellipsoid filter taking into account also the length of the brain (not to consider growth of inter-hemispheres longitudinal fissure)
-        
-    rqp = np.linalg.norm( np.array([    0.73 * mesh.coordinates()[vertex, 0], 
-                                        0.85 * mesh.coordinates()[vertex, 1], 
-                                        0.92 * (mesh.coordinates()[vertex, 2] - 0.15)   ])) """
-                                        
-    """                                 
-    rqp = np.linalg.norm( np.array([    0.8 * characteristics["maxx"]/0.8251 * mesh.coordinates()[vertex, 0], # --> 0.8*maxX/0.8251
-                                        0.63 * mesh.coordinates()[vertex, 1] + 0.075, # int(0.6/maxY)
-                                        0.8 * characteristics["maxz"]/0.637 * mesh.coordinates()[vertex, 2] - 0.25   ])) # --> 0.8*maxZ/0.637
-    """ 
-
-    """
-    dX = characteristics['maxx'] - characteristics['minx'] # 2*a
-    dY = characteristics['maxy'] - characteristics['miny'] # 2*b
-    dZ = characteristics['maxz'] - characteristics['minz'] # 2*c
-    #a, b, c = 0.5 * dX, 0.5 * dY, 0.5 * dZ_whole_brain
-    a, b, c = 0.9 * 0.5 * dX, 0.9 * 0.5 * dY,  0.9 * 0.5 * dZ 
-    
-    rqp = np.linalg.norm( np.array([    a/b * (mesh.coordinates()[vertex, 0] - center_of_gravity[0]), 
-                                                (mesh.coordinates()[vertex, 1] - center_of_gravity[1]), 
-                                        c/b * (mesh.coordinates()[vertex, 2] - center_of_gravity[2]) - 0.75 * pond_Z ])) 
-
-    if rqp < new_critical_value:
-        grGrowthZones.vector()[scalarDOF] = max(1.0 - 10.0*(new_critical_value - rqp), 0.0)
-    else:
-        grGrowthZones.vector()[scalarDOF] = 1.0
-    """
-    
-    #dX = characteristics['maxx'] - characteristics['minx'] 
-    #dZ = characteristics['maxz'] - characteristics['minz'] 
-    #dY = characteristics['maxy'] - characteristics['miny']
-    aX = 0.4 * dX
-    bY = 0.35 * dY
-    cZ = 0.5 * dZ # BrainGrowth ellipsoid: (1.0, 0.9, 0.7)
+    print("\nmark no-growth brain regions (e.g. 'longitudinal fissure' - 'ventricules' - 'mammilary bodies')...") # code source: T.Tallinen et al. 2016. See detail in https://github.com/rousseau/BrainGrowth/blob/master/geometry.py   
+    aX = 0.35 * dX
+    bY = 0.4 * dY
+    cZ = 0.5 * dZ # BrainGrowth ellipsoid: (0.9, 1.0, 0.7)
 
     for vertex, scalarDOF in enumerate(vertex2dofs_S):
             
-        point_within_NoGrowthellipsoid = (mesh.coordinates()[vertex, 0] - 0.05*dX - center_of_gravity[0])**2 / aX**2 + (mesh.coordinates()[vertex, 1] - center_of_gravity[1])**2 / bY**2 + (mesh.coordinates()[vertex, 2] + 0.15*dZ - center_of_gravity[2])**2 / cZ**2 
-                                            # - 0.05*dX --> positive offset X to the frontal lobe
-                                            # 0.15*dZ --> negative offset Z to the bottom Z of the mesh
+        point_within_NoGrowthellipsoid = (mesh.coordinates()[vertex, 0] - center_of_gravity[0])**2 / aX**2 + \
+                                         (mesh.coordinates()[vertex, 1] - 0.05*dY - center_of_gravity[1])**2 / bY**2 + \
+                                         (mesh.coordinates()[vertex, 2] + 0.15*dZ - center_of_gravity[2])**2 / cZ**2 
+                                         # - 0.05*dY --> positive offset Y to the frontal lobe
+                                         # 0.15*dZ --> negative offset Z to the bottom Z of the mesh
                                                                                     
         if point_within_NoGrowthellipsoid <= 1: 
             grGrowthZones.vector()[scalarDOF] = 0.0
@@ -472,123 +304,92 @@ if __name__ == '__main__':
             
     
     FEniCS_FEM_Functions_file.write(grGrowthZones, T0_in_GW) # for debugging
+
+    # Mark zones where to fix nodes (prescribed displacement set to 0.) (Dirichlet BCs) --> https://fenicsproject.org/qa/2989/vertex-on-mesh-boundary/
+    # --------------------------------------------------------------------------------
+    d2v_S = fenics.dof_to_vertex_map(S)
+    
+    vertices_on_boundary_withNoGrowth = d2v_S[grGrowthZones.vector() == 0.0] # indexation in the whole mesh
+    
+    class MyDict(dict): # https://fenicsproject.org/qa/5268/is-that-possible-to-identify-a-facet-by-its-vertices/
+        def get(self, key):
+            return dict.get(self, sorted(key))
+    
+    facet_2_vertices = MyDict((facet.index(), tuple(facet.entities(0))) for facet in fenics.facets(mesh)) # facet to 3 vertices indices
+    
+    for facet in fenics.facets(mesh):
+        if facet.exterior() == True: # to select only faces at the exterior surface of the mesh (otherwise, inner faces are also marked)
+            vertex1, vertex2, vertex3 = facet_2_vertices[facet.index()]
+            if vertex1 in vertices_on_boundary_withNoGrowth and vertex2 in vertices_on_boundary_withNoGrowth and vertex3 in vertices_on_boundary_withNoGrowth:
+                #boundary_face_marker.array()[facet.index()] = 102
+                volume_facet_marker.array()[facet.index()] = 102
     
     # unilateral contact of each hemisphere onto two associated rigid planes (to correct auto-collisions between the two interhemispheres)
     # ----------------------------------------------------------------------
     # Define interhemisphere contact zone 
     # ---
     print("\ndefining the interhemispheric contact zone...") 
-    #Ymin, Ymax = np.min(mesh.coordinates()[:,1]), np.max(mesh.coordinates()[:,1])
-    #dY = Ymax - Ymin
-    #Y_mean = 0.5 * (Ymin + Ymax)
-    y_interhemisphere_plane = 0.5 * (characteristics['miny'] + characteristics['maxy'])
-    interHemisphere_Zone_minY_maxY = y_interhemisphere_plane - dY/8, y_interhemisphere_plane + dY/8
-
-    """
-    def get_surface_node_coordinates(mesh, boundary_markers, surface_id):
-        coordinates = []
-        for vertex in fenics.vertices(mesh):
-            for facet in fenics.facets(vertex):
-                if boundary_markers[facet] == surface_id:
-                    coordinates.append(vertex.point().array())
-                    break
-        return coordinates
-
-    coords_103 = get_surface_node_coordinates(mesh, volume_facet_marker, 103) # contact boundary Right 
-    coords_104 = get_surface_node_coordinates(mesh, volume_facet_marker, 104) # contact boundary Left 
+    x_interhemisphere_plane = 0.5 * (characteristics['minx'] + characteristics['maxx'])
+    interHemisphere_Zone_minX_maxX = x_interhemisphere_plane - dX/8, x_interhemisphere_plane + dX/8
     
-    coords_103 = np.array(coords_103)
-    coords_104 = np.array(coords_104)
-    
-    Ymin_Right = np.min(coords_103[:,1])
-    Ymax_Left = np.max(coords_104[:,1])
-    """
-    
-    # Ymin_Right = 0.030504 # 0.0292715 # [m]
-    # Ymax_Left = 0.0280936 # 0.0284948 # [m]
-    
-    #gap_dHCP_28GW = 0.0025 # Ymin_Right - Ymax_Left # min gap between the two hemispheres measured on the real mesh in meters
+    gap_dHCP_28GW = 0.0025 # Xmax_Right - Xmin_Left --> min gap between the two hemispheres measured on the real mesh in meters at 28 GW (targetted gap).
 
-    #y_interhemisphere_plane_103 =  y_interhemisphere_plane + 0.25 * gap_dHCP_28GW # Right (towards y positive)
-    #y_interhemisphere_plane_104 =  y_interhemisphere_plane - 0.25 * gap_dHCP_28GW # Left
-
+    x_interhemisphere_plane_103 =  x_interhemisphere_plane - 0.25 * gap_dHCP_28GW # Left (towards x negative)
+    x_interhemisphere_plane_104 =  x_interhemisphere_plane + 0.25 * gap_dHCP_28GW # Right
+    
     # Mark contact boundaries
-    # -----------------------
-    class InterHemisphereContactZoneRight(fenics.SubDomain): # y > Y_mean 
+    # ---
+    print("\nmarking the contact boundaries (left: 103 (X-); right: 104 (X+))...")
+    class InterHemisphereContactZoneLeft(fenics.SubDomain):  # x < x_interhemisphere_plane (X-)
 
-        def __init__(self, y_interhemisphere_plane, interHemisphere_Zone, h):
+        def __init__(self, interHemisphere_Zone, x_interhemisphere_plane, h):
             fenics.SubDomain.__init__(self)
-            self.y_interhemisphere_plane = y_interhemisphere_plane
             self.interHemisphere_Zone = interHemisphere_Zone
+            self.x_interhemisphere_plane = x_interhemisphere_plane
             self.h = h
 
         def inside(self, x, on_boundary): 
-            return x[1] >= self.y_interhemisphere_plane + self.h and x[1] < self.interHemisphere_Zone[1] and on_boundary
-
-    hRight = 0.0 #5.0e-4
-    interHemisphereRightContactZone = InterHemisphereContactZoneRight(y_interhemisphere_plane, interHemisphere_Zone_minY_maxY, hRight)
-    interHemisphereRightContactZone.mark(boundary_face_marker, 103)
-    interHemisphereRightContactZone.mark(volume_facet_marker, 103)
-    
-    """
-    bmesh_contact_zone_Right_hemisphere = fenics.SubMesh(bmesh, boundary_face_marker, 103)
-    S_cortexsurface_contact_zone_Right = fenics.FunctionSpace(bmesh_contact_zone_Right_hemisphere, "CG", 1) 
-    contact_pressure_Right = fenics.Function(S_cortexsurface_contact_zone_Right, name="ContactPressureRight")
-    """
-    
-    ##
-    
-    class InterHemisphereContactZoneLeft(fenics.SubDomain): # y < Y_mean 
-
-        def __init__(self, y_interhemisphere_plane, interHemisphere_Zone, h):
-            fenics.SubDomain.__init__(self)
-            self.y_interhemisphere_plane = y_interhemisphere_plane
-            self.interHemisphere_Zone = interHemisphere_Zone
-            self.h = h
-
-        def inside(self, x, on_boundary): 
-            return x[1] > self.interHemisphere_Zone[0] and x[1] <= self.y_interhemisphere_plane - self.h and on_boundary
+            return x[0] > self.interHemisphere_Zone[0] and x[0] <= self.x_interhemisphere_plane - self.h and on_boundary
 
     hLeft = 0.0 #5.0e-4
-    interHemisphereLeftContactZone = InterHemisphereContactZoneLeft(y_interhemisphere_plane, interHemisphere_Zone_minY_maxY, hLeft)
-    interHemisphereLeftContactZone.mark(boundary_face_marker, 104)
-    interHemisphereLeftContactZone.mark(volume_facet_marker, 104)
+    interHemisphereLeftContactZone = InterHemisphereContactZoneLeft(interHemisphere_Zone_minX_maxX, x_interhemisphere_plane, hLeft)
+    #interHemisphereLeftContactZone.mark(boundary_face_marker, 103)
+    interHemisphereLeftContactZone.mark(volume_facet_marker, 103)
     
     """
-    bmesh_contact_zone_Left_hemisphere = fenics.SubMesh(bmesh, boundary_face_marker, 104)
+    bmesh_contact_zone_Left_hemisphere = fenics.SubMesh(bmesh, boundary_face_marker, 103)
     S_cortexsurface_contact_zone_Left = fenics.FunctionSpace(bmesh_contact_zone_Left_hemisphere, "CG", 1) 
     contact_pressure_Left = fenics.Function(S_cortexsurface_contact_zone_Left, name="ContactPressureLeft")
     """
 
-    # Mark zones where to fix nodes (prescribed displacement set to 0.) (Dirichlet BCs) --> https://fenicsproject.org/qa/2989/vertex-on-mesh-boundary/
-    # --------------------------------------------------------------------------------
-    d2v_S = fenics.dof_to_vertex_map(S)
-        
-    class DirichletBCs_VZ(fenics.SubDomain): 
-        def __init__(self, radius_VZ, COG_bb, dX, dY, dZ, dilate_coef_x, dilate_coef_y, dilate_coef_z): 
-            fenics.SubDomain.__init__(self)
-            self.radius_VZ = radius_VZ
-            self.COG_bb = COG_bb
-            self.dilate_coef_x = dilate_coef_x
-            self.dilate_coef_y = dilate_coef_y
-            self.dilate_coef_z = dilate_coef_z
-            self.dX, self.dY, self.dZ = dX, dY, dZ 
-            #self.hmean = hmean
-                        
-        def inside(self, x, on_boundary):
-            tol = 1E-14
-            return ((x[0]-self.COG_bb[0])/(2.5*self.dilate_coef_x))**2 + ((x[1] - self.COG_bb[1])/(2.5*self.dilate_coef_y))**2 + ((x[2]-self.COG_bb[2])/(2.5*self.dilate_coef_z))**2 <= (self.radius_VZ)**2 and on_boundary
-    
-    # 2*self.dilate_coef_x; 2*self.dilate_coef_y and 2*self.dilate_coef_z --> to be sure to englobe the VZ boundary
-    
-    dirichletBCs_VZ = DirichletBCs_VZ(radius_VZ, COG_bb, dX, dY, dZ, dilate_coef_x, dilate_coef_y, dilate_coef_z)
-    dirichletBCs_VZ.mark(volume_facet_marker, 102) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
-    #dirichletBCs_VZ.mark(boundary_face_marker, 102)
-    #dirichletBCs_VZ.mark(volume_facet_marker, 102, check_midpoint=False) # https://fenicsproject.discourse.group/t/how-to-compute-boundary-mesh-and-submesh-from-an-halfdisk-mesh/9812/2
-    #dirichletBCs_VZ.mark(boundary_face_marker, 102, check_midpoint=False)
+    ###
 
-    # Mark zone between the 2 rigid planes
-    # ------------------------------------
+    class InterHemisphereContactZoneRight(fenics.SubDomain): # x > x_interhemisphere_plane (X+)
+
+        def __init__(self, interHemisphere_Zone, x_interhemisphere_plane, h):
+            fenics.SubDomain.__init__(self)
+            self.interHemisphere_Zone = interHemisphere_Zone
+            self.x_interhemisphere_plane = x_interhemisphere_plane
+            self.h = h
+
+        def inside(self, x, on_boundary): 
+            return x[0] >= self.x_interhemisphere_plane + self.h and x[0] < self.interHemisphere_Zone[1] and on_boundary 
+
+    hRight = 0.0 #5.0e-4
+    interHemisphereRightContactZone = InterHemisphereContactZoneRight(interHemisphere_Zone_minX_maxX, x_interhemisphere_plane, hRight)
+    #interHemisphereRightContactZone.mark(boundary_face_marker, 104)
+    interHemisphereRightContactZone.mark(volume_facet_marker, 104)
+    
+    """
+    bmesh_contact_zone_Right_hemisphere = fenics.SubMesh(bmesh, boundary_face_marker, 104)
+    S_cortexsurface_contact_zone_Right = fenics.FunctionSpace(bmesh_contact_zone_Right_hemisphere, "CG", 1) 
+    contact_pressure_Right = fenics.Function(S_cortexsurface_contact_zone_Right, name="ContactPressureRight")
+    """
+    
+    ###
+        
+    # Mark zone between the 2 rigid planes to prevent unwished growth and erratic deformation  in between of the contact planes
+    # -------------------------------------------------------------------------------------------------------------------------
     print("\nmarking the boundary zone between the 2 interhemispheric rigid planes (99)...")
     class MyDict(dict): # https://fenicsproject.org/qa/5268/is-that-possible-to-identify-a-facet-by-its-vertices/
             def get(self, key):
@@ -597,49 +398,114 @@ if __name__ == '__main__':
     facet_2_vertices = MyDict((facet.index(), tuple(facet.entities(0))) for facet in fenics.facets(mesh)) # facet to 3 vertices indices
     
     tol = 1E-14 
-    """
-    for facet in fenics.facets(mesh):
-        if facet.exterior() == True: # to select only faces at the exterior surface of the mesh (otherwise, inner faces are also marked)
-            vertex1, vertex2, vertex3 = facet_2_vertices[facet.index()]
-            #Y_COG_facet = 1/3 * (mesh.coordinates()[vertex1] + mesh.coordinates()[vertex2] + mesh.coordinates()[vertex3]) [1]
-            Y_inner_facet = min(abs(mesh.coordinates()[vertex1][1]), min(abs(mesh.coordinates()[vertex2][1]), abs(mesh.coordinates()[vertex3][1])))
-            if Y_inner_facet <= y_interhemisphere_plane + hRight + tol and Y_inner_facet <= abs(y_interhemisphere_plane - hLeft - tol): # facet in the interhemispheric zone, between the two rigid planes. This facet should not grow, and should not be taken as reference to build Mesh_Nt.
-               if volume_facet_marker.array()[facet.index()] == 102:
-                   pass
-               else:
-                   volume_facet_marker.array()[facet.index()] = 99
-    """
     
+    for cell in fenics.cells(mesh): # tets
+        
+        tet_4vertices_indices = cell.entities(0)
+        tet_4facets_indices = cell.entities(2)
+
+        vertex1, vertex2, vertex3, vertex4 = tet_4vertices_indices[0], tet_4vertices_indices[1], tet_4vertices_indices[2], tet_4vertices_indices[3]
+        
+        vertices = np.array(cell.get_vertex_coordinates())
+        vertices = vertices.reshape((4, 3))
+        
+        tet_COG_coords = np.mean(vertices, axis=0) # COG
+
+        if tet_COG_coords[0] > 0: # tet belongs to Right hemisphere (X+) 
+            tet_inner_vertex_X = min( min(mesh.coordinates()[vertex1][0], min(mesh.coordinates()[vertex2][0], mesh.coordinates()[vertex3][0])), mesh.coordinates()[vertex4][0])                     
+        else : # tet belongs to Left hemisphere (X-) 
+            tet_inner_vertex_X = max( max(mesh.coordinates()[vertex1][0], max(mesh.coordinates()[vertex2][0], mesh.coordinates()[vertex3][0])), mesh.coordinates()[vertex4][0])
+
+        if tet_inner_vertex_X >= x_interhemisphere_plane_103 - tol and tet_inner_vertex_X <= x_interhemisphere_plane_104 + tol: # tet in the interhemispheric zone, between the two rigid planes. This facet should not grow, and should not be taken as reference to build Mesh_Nt.
+            for facet_index in tet_4facets_indices:
+                if volume_facet_marker.array()[facet_index] == 102: # label for fixed Dirichlet BCs
+                    pass
+                else:
+                    volume_facet_marker.array()[facet_index] = 99
+
+                    # Add zone 99 (cortex surface in between the two fictive contact planes) to zones that will not grow (in order not to have erratic computational behaviour with contact mechanics)
+                    # --------------------------------------------------------------------------------------------------
+                    facet = fenics.Facet(mesh, facet_index)
+                    facet_3vertices_indices = facet.entities(0)
+                    facet_vertex1, facet_vertex2, facet_vertex3 = facet_3vertices_indices[0], facet_3vertices_indices[1], facet_3vertices_indices[2]
+
+                    scalarDOF1, scalarDOF2, scalarDOF3 = vertex2dofs_S[facet_vertex1], vertex2dofs_S[facet_vertex2], vertex2dofs_S[facet_vertex3]
+                    grGrowthZones.vector()[scalarDOF1] = 0.0
+                    grGrowthZones.vector()[scalarDOF2] = 0.0
+                    grGrowthZones.vector()[scalarDOF3] = 0.0
+                
+    # Transfer labels marked on the whole mesh facets (volume) to the surface mesh faces (in order to get valid boundary_surface object)
+    # ----------------------------------------------------------------------------------
+    print("\ntransferring labels from the whole mesh facets ('volume_facet_marker') to the surface mesh faces ('boundary_face_marker')...")
+    # build mapping from whole mesh facets to their associated coordinates (midpoint of the facet) 
+    coords_2_meshfacet_index = {}
+    
+    # parse whole mesh facets (mesh)
     for facet in fenics.facets(mesh):
-        if facet.exterior() == True: # to select only faces at the exterior surface of the mesh (otherwise, inner faces are also marked)
-
-            vertex1, vertex2, vertex3 = facet_2_vertices[facet.index()]
-
-            Y_COG_facet = 1/3 * (mesh.coordinates()[vertex1] + mesh.coordinates()[vertex2] + mesh.coordinates()[vertex3])[1]
-
-            if Y_COG_facet > 0: # face belongs to Right hemisphere (Y+) 
-                Y_inner_facet = min(mesh.coordinates()[vertex1][1], min(mesh.coordinates()[vertex2][1], mesh.coordinates()[vertex3][1]))                        
-            else : # face belongs to Left hemisphere (Y-) 
-                Y_inner_facet = max(mesh.coordinates()[vertex1][1], max(mesh.coordinates()[vertex2][1], mesh.coordinates()[vertex3][1]))
-
-            if Y_inner_facet <= y_interhemisphere_plane + hRight + tol and Y_inner_facet >= y_interhemisphere_plane - hLeft - tol: # facet in the interhemispheric zone, between the two rigid planes. This facet should not grow, and should not be taken as reference to build Mesh_Nt.
-               if volume_facet_marker.array()[facet.index()] == 102:
-                   pass
-               else:
-                   volume_facet_marker.array()[facet.index()] = 99
-
-    # export marked boundaries
+        midpoint = facet.midpoint()
+        facet_midpoint_coords = tuple(np.round(midpoint.array(), decimals=6))  # --> get the coordinates of the midpoint (rounded to avoid precision mismatch)
+        coords_2_meshfacet_index[facet_midpoint_coords] = facet.index()
+    
+    # parse surface mesh faces (bmesh)
+    for face in fenics.faces(bmesh):
+        midpoint = face.midpoint()
+        face_midpoint_coords = tuple(np.round(midpoint.array(), decimals=6))
+        
+        if face_midpoint_coords in coords_2_meshfacet_index: # if the bmesh face (midpoint) coords corresponds to any of the mesh facets (midpoint) coords 
+            
+            facet_index = coords_2_meshfacet_index[face_midpoint_coords] # get the associated mesh facet index correspondint to the bmesh face (midpoint) coords
+            
+            if volume_facet_marker[facet_index] == 102: # facet_index refers to a face in the volume of the mesh
+                boundary_face_marker[face.index()] = 102 # face_index refers to a face belonging to the mesh surface
+            
+            elif volume_facet_marker[facet_index] == 103: # contact boundary related to right hemisphere
+                boundary_face_marker[face.index()] = 103
+            
+            elif volume_facet_marker[facet_index] == 104: # contact boundary related to left hemisphere
+                boundary_face_marker[face.index()] = 104
+            
+            elif volume_facet_marker[facet_index] == 99: # interhemisphere boundary
+                boundary_face_marker[face.index()] = 99
+                
+            elif volume_facet_marker[facet_index] == 101: # cortical surface boundary
+                boundary_face_marker[face.index()] = 101
+    
+    # export marked boundaries (both are required for the simulation)
     # ------------------------
+    print("\nexporting marked boundaries ('volume_facet_marker' and 'boundary_face_marker')...")
     #export_XML_PVD_XDMF.export_PVDfile(args.output, 'no_growth_vertices', vertices_withNoGrowth)
-    export_XML_PVD_XDMF.export_PVDfile(args.output, 'volume_facet_marker_T0', volume_facet_marker)
-    
+    export_XML_PVD_XDMF.export_PVDfile(args.output, 'volume_facet_marker_T0', volume_facet_marker) # "volume_facet_marker" is used to define the surface zone for FEM integration and in particular the surface where the Dirichlet boundary conditions apply.
+    export_XML_PVD_XDMF.export_PVDfile(args.output, 'boundary_face_marker_T0', boundary_face_marker) # "boundary_face_marker" is used to build bmesh and the associated bmeshsurface_bbtree. And then, bmeshsurface_bbtree is used to define the FEM functions d2s and gm, required by the simulation (so to define the zone where there will be growth).  
+
     # Measurement entities 
     # --------------------
     ds = fenics.Measure("ds", domain=mesh, subdomain_data=volume_facet_marker) 
     
+    # FEM function spaces associated with the cortex surface
+    ########################################################
+    print("\ndefining FEM function spaces associated to the cortical surface mesh...")
+    S_cortexsurface = fenics.FunctionSpace(bmesh, "CG", 1) 
+    V_cortexsurface = fenics.VectorFunctionSpace(bmesh, "CG", 1) 
+    
+    # Additional mappings
+    #####################
+    print("\ncomputing mappings...")
+    # From vertex to DOF in the whole mesh --> used to compute Mesh_Nt
+    # ----------------------------------------------------------------
+    vertex2dofs_B101 = mappings.vertex_to_dofs_VectorFunctionSpace(V_cortexsurface, gdim)
+
+    # From the surface mesh (cortex envelop) to the whole mesh (B101_2_V_dofmap; vertexB101_2_dofsV_mapping --> used to compute Mesh_Nt)
+    # --------------------------------------------------------
+    B101_2_V_dofmap, vertexB101_2_dofsV_mapping = mappings.surface_to_mesh_V(gdim, V, V_cortexsurface, vertex2dofs_B101)
+    Sboundary101_2_S_dofmap, vertexBoundary101Mesh_2_dofScalarFunctionSpaceWholeMesh_mapping = mappings.surface_to_mesh_S(S, S_cortexsurface)
+    
+    # From the whole mesh to the surface mesh (to be use for projections onto surface in contact process)
+    # ---------------------------------------
+    #vertexWholeMeshIDX_to_projectedVertexBoundaryMeshIDX_mapping_t0 = mappings.mesh_to_surface_V(mesh.coordinates(), bmesh.coordinates()) # at t=0. (keep reference projection before contact for proximity node to deep tetrahedra vertices)
+    
     # Residual Form
     ###############
-    
+
     # prerequisites before computing Fg and mu (H, d2s and gm=f(d2s, H) required)
     # ----------------------------------------
     print("\ninitializing distances to surface...")
@@ -662,11 +528,11 @@ if __name__ == '__main__':
     projection.local_project(grRAD * (1 - gm) * alphaRAD * dt_in_seconds, S, dg_RAD) 
 
     print("\ninitializing normals to boundary...")
-    boundary_normals = growth.compute_topboundary_normals(mesh, ds, V) # --> ds(100 + 103 + 104 - 102)
+    boundary_normals = growth.compute_topboundary_normals(mesh, ds, V) # ds(101) + ds(103) + ds(104) only cortical surface (labelled 101 but also including the contact zones 103 and 104) must be identified as the reference boundary where to compute the normals for the growth tensor orientation 
     projection.local_project(boundary_normals, V, BoundaryMesh_Nt)
 
     print("\ninitializing projected normals of nodes of the whole mesh...")
-    mesh_normals = growth.compute_mesh_projected_normals(V, mesh.coordinates(), bmesh.coordinates(), vertexB_2_dofsV_mapping, vertex2dofs_V, BoundaryMesh_Nt) 
+    mesh_normals = growth.compute_mesh_projected_normals(V, mesh.coordinates(), bmesh.coordinates(), vertexB101_2_dofsV_mapping, vertex2dofs_V, BoundaryMesh_Nt) 
     projection.local_project(mesh_normals, V, Mesh_Nt)
 
     print("\ninitializing growth tensor...")
@@ -690,7 +556,7 @@ if __name__ == '__main__':
     body_forces_V = fenics.Constant([0.0, 0.0, 0.0])
     tract_V = fenics.Constant([0.0, 0.0, 0.0])
     """
-
+    
     # F: deformation gradient
     # -----------------------
     Id = fenics.Identity(gdim)
@@ -757,43 +623,32 @@ if __name__ == '__main__':
     #h = 0. #0.00005 # since max displacement when contact between lobes occurs at 23GW is ~0.0001 (with no Contact Mechanics added in residual form <-- not true)
     
     # Here self-contact is replaced by a contact between a deformable solid (Left or Right hemisphere) and a rigid plane (the interhemisphere plane)
-
-    def normal_gap_Y(u, y_plane, mesh): # Definition of gap function (if gap < 0 => penalization)
+    
+    def normal_gap_X(u, x_plane, mesh): # Definition of gap function (if gap < 0 => penalization)
         x = fenics.SpatialCoordinate(mesh) # in order to recompute x at each new reference configuration
-        return (x[1] + u[1]) - y_plane # compute each time new virtual configuration at t+1 
+        return (x[0] + u[0]) - x_plane # compute each time new virtual configuration at t+1 
         # --> = gn
     
     """
-    def normal_gap(u, y_plane, BoundaryMesh_Nt, mesh): # Definition of gap function (if gap < 0 => penalization)
-        x = fenics.SpatialCoordinate(mesh) # in order to recompute x at each new reference configuration
-        return fenics.dot((y_plane - (x[1] + u[1])) * fenics.Constant((0., 1., 0.)) , BoundaryMesh_Nt) # compute each time new virtual configuration at t+1
-        # --> = gn
-    """
-        
     def mackauley(x):
         return (x + abs(x))/2
+    """
     
     # Compute the normal gaps for left and right hemispheres 
     # ------------------------------------------------------
     print("\nexpressing the normal gaps for left and right hemispheres...")
     # compute normal gap gn between brain surface (on the Left or Right contact zone) and the interhemisphere plane
-    #gn = normal_gap_Y(u, y_interhemisphere_plane, mesh) # xS - xM
-    gn = normal_gap_Y(u, y_interhemisphere_plane, mesh) # xS - xM# Right
-    #gn = normal_gap(u, y_interhemisphere_plane, BoundaryMesh_Nt, mesh) # xS - xM
+    gn = normal_gap_X(u, x_interhemisphere_plane, mesh) # xS - xM
     
-    # Penalize collision of Right-hemisphere onto interhemisphere plane (Y) (Add contact to the residual form)
+    # Penalize collision of Left-hemisphere onto interhemisphere plane (X) (Add contact to the residual form)
     # ---------------------------------------------------------------------
-    y_axis_referentiel = fenics.as_vector((0., 1., 0.))
+    x_axis_referentiel = fenics.as_vector((1., 0., 0.))
     
-    #res += epsilon * fenics.dot( mackauley(gn) * BoundaryMesh_Nt, v_test ) * ds(103) 
-    res -= epsilon * fenics.dot( fenics.conditional(- gn > 0, - gn, 0) * y_axis_referentiel, v_test ) * ds(103) 
-    # res += epsilon * fenics.dot( mackauley(-gn) * BoundaryMesh_Nt, v_test ) * ds(103)
+    res -= epsilon * fenics.dot( fenics.conditional(gn > 0, gn, 0) * (-x_axis_referentiel), v_test ) * ds(103) 
     
-    # Penalize collision of Left-hemisphere onto interhemisphere plane (Y) (Add contact to the residual form)
+    # Penalize collision of Right-hemisphere onto interhemisphere plane (X) (Add contact to the residual form)
     # --------------------------------------------------------------------
-    #res += epsilon * fenics.dot( mackauley(-gn) * BoundaryMesh_Nt, v_test ) * ds(104) 
-    res -= epsilon * fenics.dot( fenics.conditional(gn > 0, gn, 0) * (-y_axis_referentiel), v_test ) * ds(104) 
-    # res += epsilon * fenics.dot( mackauley(-gn) * BoundaryMesh_Nt, v_test ) * ds(104)
+    res -= epsilon * fenics.dot( fenics.conditional(- gn > 0, - gn, 0) * x_axis_referentiel, v_test ) * ds(104) 
 
     # Non Linear Problem to solve
     # ---------------------------
@@ -810,7 +665,7 @@ if __name__ == '__main__':
     ######################################
 
     # Parameters
-    ############
+    #############
     nonlinearvariationalsolver = fenics.NonlinearVariationalSolver(nonlinearvariationalproblem) 
     # info(nonlinearvariationalsolver.parameters, True) # display the list of available parameters and default values
     # https://home.simula.no/~hpl/homepage/fenics-tutorial/release-1.0-nonabla/fenics_tutorial_1.0.pdf
@@ -841,7 +696,7 @@ if __name__ == '__main__':
     """
     
     # Reusing previous unknown u_n as the initial guess to solve the next iteration n+1 
-    ###################################################################################
+    ####################################################################################
     nonlinearvariationalsolver.parameters['newton_solver']['krylov_solver']['nonzero_initial_guess'] = True # Enables to use a non-null initial guess for the Krylov solver (MUMPS) within a Newton-Raphson iteration. https://link.springer.com/content/pdf/10.1007/978-3-319-52462-7_5.pdf --> "Using a nonzero initial guess can be particularly important for timedependent problems or when solving a linear system as part of a nonlinear iteration, since then the previous solution vector U will often be a good initial guess for the solution in the next time step or iteration."
     # parameters['krylov_solver']['monitor_convergence'] = True # https://fenicsproject.org/qa/1124/is-there-a-way-to-set-the-inital-guess-in-the-krylov-solver/
     
@@ -852,7 +707,7 @@ if __name__ == '__main__':
     
     times = np.linspace(T0_in_seconds, Tmax_in_seconds, int(Nsteps+1))  # in seconds!
     
-    # Export FEM function at T0_in_GW
+    # Export initial FEM functions
     FEniCS_FEM_Functions_file.write(d2s, T0_in_GW)
     FEniCS_FEM_Functions_file.write(H, T0_in_GW)
     FEniCS_FEM_Functions_file.write(gm, T0_in_GW)
@@ -869,9 +724,8 @@ if __name__ == '__main__':
     FEniCS_FEM_Functions_file.write(K, T0_in_GW)
 
     initial_time = time.time()
+    u_old = np.zeros_like(u.vector()[:]) # initialize the tampon values of the displacement to compute the cumulative displacement
     for i, dt in enumerate( tqdm( np.diff(times), desc='brain is growing...', leave=True) ): # dt = dt_in_seconds
-
-    # collisions (fcontact_global_V) have to be detected at each step
 
         #fenics.set_log_level(fenics.LogLevel.ERROR) # in order not to print solver info logs about Newton solver tolerances
         fenics.set_log_level(fenics.LogLevel.INFO) # in order to print solver info logs about Newton solver tolerances
@@ -919,7 +773,7 @@ if __name__ == '__main__':
         boundary_normals = growth.compute_topboundary_normals(mesh, ds, V) 
         projection.local_project(boundary_normals, V, BoundaryMesh_Nt)
         
-        mesh_normals = growth.compute_mesh_projected_normals(V, mesh.coordinates(), bmesh.coordinates(), vertexB_2_dofsV_mapping, vertex2dofs_V, BoundaryMesh_Nt) 
+        mesh_normals = growth.compute_mesh_projected_normals(V, mesh.coordinates(), bmesh.coordinates(), vertexB101_2_dofsV_mapping, vertex2dofs_V, BoundaryMesh_Nt) 
         projection.local_project(mesh_normals, V, Mesh_Nt)
 
         # Final growth tensor
@@ -929,7 +783,7 @@ if __name__ == '__main__':
 
         # Solve
         #######       
-        nonlinearvariationalsolver.solve() 
+        nonlinearvariationalsolver.solve() # compute the displacement field u to apply to obtain the new mesh at t_in_GW
 
         # Export displacement & other FEM functions
         ###########################################
@@ -940,6 +794,9 @@ if __name__ == '__main__':
         FEniCS_FEM_Functions_file.write(gm, t_in_GW)
         FEniCS_FEM_Functions_file.write(mu, t_in_GW)
         FEniCS_FEM_Functions_file.write(K, t_in_GW)
+
+        projection.local_project(fenics.det(F), S, J) # local volume change (for incompressible material, should be close to 1)
+        FEniCS_FEM_Functions_file.write(J, t_in_GW)
         
         # growth tensor components
         FEniCS_FEM_Functions_file.write(BoundaryMesh_Nt, t_in_GW) 
@@ -958,13 +815,20 @@ if __name__ == '__main__':
         projection.local_project(PK1tot, Vtensor, PK1tot_T) # Piola-Kirchhoff stress
         FEniCS_FEM_Functions_file.write(PK1tot_T, t_in_GW)
         
-        projection.local_project(fenics.det(F), S, J) # local volume change (for incompressible material, should be close to 1)
-        FEniCS_FEM_Functions_file.write(J, t_in_GW)
-        
+        projection.local_project(F, Vtensor, F_T) # Deformation gradient
+        FEniCS_FEM_Functions_file.write(F_T, t_in_GW)
+
+        projection.local_project(Fe, Vtensor, Fe_T) # Elastic deformation gradient
+        FEniCS_FEM_Functions_file.write(Fe_T, t_in_GW)
+
+        gradFe_vec = fenics.as_vector([fenics.grad(Fe)[i, j, k] for i in range(3) for j in range(3) for k in range(3)])
+        projection.local_project(gradFe_vec, Vtensor_order3, gradFe_T) # ∇Fe
+        FEniCS_FEM_Functions_file.write(gradFe_T, t_in_GW)
+
         # contact pressure
         """
-        projection.local_project(epsilon * gn, S_cortexsurface_contact_zone_Right, contact_pressure_Right)
-        projection.local_project(epsilon * (-gn), S_cortexsurface_contact_zone_Left, contact_pressure_Left)
+        projection.local_project(epsilon * gn_103, S_cortexsurface_contact_zone_Left, contact_pressure_Left)
+        projection.local_project(epsilon * (-gn_104), S_cortexsurface_contact_zone_Right, contact_pressure_Right)
         """
         
         # Assess the numerical validity of the computational model
@@ -1012,7 +876,7 @@ if __name__ == '__main__':
             json.dump(comp_time, comp_time_json_file, indent=0)
 
         # internal energy
-        #################
+        # ---------------
         # if energy int --> 0, displacement field satisfies the ODE
         # Otherwise, there could be an issue in the numerical solving or in the definition of the BCs
          
@@ -1038,6 +902,25 @@ if __name__ == '__main__':
             time.sleep(4.) 
         """
 
+        # cumulative displacement field at each step
+        # ------------------------------------------    
+        cumulative_displacement[t_in_GW] = list(u.vector()[:] + u_old) # array 
+        # u.get_local() --> displacement field u from "t_in_GW - dt" to "t_in_GW" to be applied obtain the mesh configuration at t_in_GW
+        # cumulative_displacement[t_in_GW] --> total displacement required from initial mesh at 21GW to obtain deformed brain mesh at t_in_GW
+        u_old = u.vector()[:].copy()
+
+        with open(cumulative_displacement_path, 'w') as cumulative_displacement_json_file:  
+            json.dump(cumulative_displacement, cumulative_displacement_json_file)
+
+        """
+        with open(cumulative_displacement_path, 'r') as f:
+            data = json.load(f)
+
+        cumul_displ_array_at_tGW = data[str(t_in_GW)]
+        mean_cumul_displ_at_tGW_in_mm = np.mean(cumul_displ_array_at_tGW) * 1000
+        max_cumul_displ_at_tGW_in_mm = min(cumul_displ_array_at_tGW) * 1000
+        """
+
         # Move mesh and boundary
         ########################
         # Mesh
@@ -1045,7 +928,7 @@ if __name__ == '__main__':
         #mesh.smooth()
         #mesh.smooth_boundary(10, True) # --> to smooth the contact boundary after deformation and avoid irregular mesh surfaces at the interhemisphere https://fenicsproject.discourse.group/t/3d-mesh-generated-from-imported-surface-volume-exhibits-irregularities/3293/6 
 
-        # Boundary (if d2s and Mesh_Nt need to be udpated: "solver_Fgt_norm"; "solver_Fgt")
+        # Boundary (if d2s and Mesh_Nt need to be udpated: "solver_Fgt_norm"; "solver_Fgt")      
         bmesh = fenics.BoundaryMesh(mesh, "exterior") # cortex envelop
         bmesh_cortexsurface_bbtree = fenics.BoundingBoxTree()
         bmesh_cortexsurface_bbtree.build(bmesh) 

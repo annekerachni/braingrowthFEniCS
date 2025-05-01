@@ -39,7 +39,7 @@ def get_nodes(mesh):
   n_nodes = np.int64(mesh[0][0])
   coordinates = np.zeros((n_nodes,3), dtype=np.float64) # Undeformed coordinates of nodes
   for i in prange(n_nodes):
-    coordinates[i] = np.array([float(mesh[i+1][1]),float(mesh[i+1][0]),float(mesh[i+1][2])]) # Change x, y (Netgen)
+    coordinates[i] = np.array([float(mesh[i+1][0]),float(mesh[i+1][1]),float(mesh[i+1][2])]) 
   
   return coordinates, n_nodes 
 
@@ -57,7 +57,7 @@ def get_tetrahedrons(mesh, n_nodes):
   n_tets = np.int64(mesh[n_nodes+1][0])
   tets = np.zeros((n_tets,4), dtype=np.int64) # Index of four vertices of tetrahedra
   for i in prange(n_tets):
-    tets[i] = np.array([int(mesh[i+n_nodes+2][1])-1,int(mesh[i+n_nodes+2][2])-1,int(mesh[i+n_nodes+2][4])-1,int(mesh[i+n_nodes+2][3])-1])  # Note the switch of handedness (1,2,3,4 -> 1,2,4,3) - the code uses right handed tets
+    tets[i] = np.array([int(mesh[i+n_nodes+2][1])-1,int(mesh[i+n_nodes+2][2])-1,int(mesh[i+n_nodes+2][4])-1,int(mesh[i+n_nodes+2][3])-1])  # Note the switch of handedness (1,2,3,4 -> 1,2,4,3) - FEniCS favors right handed tetraedrons
 
   return n_tets, tets
 
@@ -353,10 +353,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert mesh formats to XML (FEniCS format)')
     
     parser.add_argument('-i', '--input', help='Path to input mesh. Consider using following input formats depending on output format required: .msh, .mesh, .vtk, .stl -> .xml / .msh, .mesh, .vtk, .stl, .xml -> .xdmf / .msh, .mesh, .vtk, .xml, .xdmf -> . stl / .msh, .mesh, .xml, .xdmf -> .vtk / .stl -> .gii', type=str, required=False, 
-                        default='./data/brain.mesh')  
+                        default='./data/MRI_informed_simulations/dHCP_volume_21GW/affine_transformed/transformed_dhcp21GW_isotropic_smoothed.mesh') 
     
     parser.add_argument('-o', '--output', help='Path to output mesh. Possible output formats for each input format: \n.msh -> .xml, .xdmf, .stl / .mesh -> .xml, .xdmf, .stl / .stl -> .xml, .xdmf, .gii / .vtk -> .xml, .xdmf, .stl / .xml -> .xdmf, .stl / .xdmf -> .stl', type=str, required=False, 
-                        default='./data/brain.xdmf') 
+                        default='./data/MRI_informed_simulations/dHCP_volume_21GW/affine_transformed/transformed_dhcp21GW_isotropic_smoothed.xdmf') 
 
     args = parser.parse_args()
 

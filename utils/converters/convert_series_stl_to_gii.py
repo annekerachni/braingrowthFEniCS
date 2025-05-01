@@ -43,7 +43,7 @@ def stl_to_gii(input_file_stl, output_file_gii):
     return 
 
 if __name__ == '__main__':
-    files_folder = './data/brains_stl/'
+    files_folder = '/home/administrateur/Bureau/sphere_muCortex/STL/'
 
     import os
     for surface_file in os.listdir(files_folder):

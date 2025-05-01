@@ -60,7 +60,70 @@ def create_MSH_ellipsoid_mesh(ellipsoid_output_path,
     #  Cell data: gmsh:geometrical 
     """
 
-    return
+    return mesh
+
+def create_MSH_ellipsoid_emptiedVentricularZones_mesh(ellipsoid_output_path, 
+                                                      center_x, center_y, center_z, 
+                                                      radius, radius_VZ, 
+                                                      dilate_coef_x, dilate_coef_y, dilate_coef_z, 
+                                                      tetra_size_min, tetra_size_max, 
+                                                      meshing_algorithm_number,
+                                                      visualisation):
+
+    gmsh.initialize()
+
+    gmsh.model.add("ellipsoid")
+
+    # from http://en.wikipedia.org/wiki/Constructive_solid_geometry 
+    # http://www.manpagez.com/info/gmsh/gmsh-2.2.6/gmsh_38.php
+    # https://www.gmsh.info/doc/texinfo/gmsh.html#t11 
+    # https://www.gmsh.info/doc/texinfo/gmsh.html#Mesh-options 
+    gmsh.option.setNumber("Mesh.Algorithm3D", meshing_algorithm_number) # 3D mesh algorithm (1=Delaunay, 2=New Delaunay, 4=Frontal, 5=Frontal Delaunay, 6=Frontal Hex, 7=MMG3D, 9=R-tree)
+    #gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 1)
+    #gmsh.option.setNumber("Mesh.MeshSizeMin", tetra_size_min) # min size of tetrahedrons
+    gmsh.option.setNumber("Mesh.MeshSizeMax", tetra_size_max) # max size of tetrahedrons
+    #gmsh.option.setNumber("Mesh.Optimize", 1) # "Optimize the mesh to improve the quality of tetrahedral elements"
+    #gmsh.option.setNumber("Mesh.AnisoMax", 1)
+    gmsh.option.setNumber("Mesh.OptimizeNetgen", 1) # "Optimize the mesh using Netgen to improve the quality of tetrahedral elements"
+    gmsh.option.setNumber("Mesh.Smoothing", 1)
+
+    #gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius, 1, angle1=0., angle2=2*fe.pi)
+    sphere = gmsh.model.occ.addSphere(center_x, center_y, center_z, radius)
+    
+    inner_sphere_for_Dirichlet_BCs = gmsh.model.occ.addSphere(center_x, center_y, center_z, radius_VZ)
+    
+    halfsphere_emptiedVZ = gmsh.model.occ.cut([(3, sphere)], [(3, inner_sphere_for_Dirichlet_BCs)])
+    
+    gmsh.model.occ.dilate([(3, halfsphere_emptiedVZ[0][0][1])], center_x, center_y, center_z, dilate_coef_x, dilate_coef_y, dilate_coef_z)
+    
+    gmsh.model.occ.synchronize()
+
+    gmsh.model.mesh.generate(3)
+    #gmsh.model.mesh.refine()
+    #gmsh.model.mesh.setOrder(2)
+    #gmsh.model.mesh.partition(4)
+
+    gmsh.write(ellipsoid_output_path) 
+
+    if visualisation == True:
+        gmsh.fltk.run() # plot ellipsoid
+
+    gmsh.finalize()
+
+    mesh = meshio.read(ellipsoid_output_path)
+
+    print(mesh) 
+    """ 
+    #<meshio mesh object>
+    #  Number of points: xx
+    #  Number of cells:
+    #    triangle: xx
+    #  Cell sets: gmsh:bounding_entities
+    #  Point data: gmsh:dim_tags
+    #  Cell data: gmsh:geometrical 
+    """
+
+    return mesh
 
 
 
