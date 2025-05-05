@@ -722,7 +722,7 @@ if __name__ == '__main__':
     FEniCS_FEM_Functions_file.write(K, T0_in_GW)
 
     initial_time = time.time()
-    u_old = np.zeros_like(u.vector()[:]) # initialize the tampon values of the displacement to compute the cumulative displacement
+    u_vertex_old = np.zeros((len(mesh.coordinates()), 3), dtype=np.float64) # initialize the tampon values of the displacement to compute the cumulative displacement
     for i, dt in enumerate( tqdm( np.diff(times), desc='brain is growing...', leave=True) ): # dt = dt_in_seconds
 
         #fenics.set_log_level(fenics.LogLevel.ERROR) # in order not to print solver info logs about Newton solver tolerances
@@ -902,10 +902,18 @@ if __name__ == '__main__':
 
         # cumulative displacement field at each step
         # ------------------------------------------    
-        cumulative_displacement[t_in_GW] = list(u.vector()[:] + u_old) # array 
-        # u.get_local() --> displacement field u from "t_in_GW - dt" to "t_in_GW" to be applied obtain the mesh configuration at t_in_GW
-        # cumulative_displacement[t_in_GW] --> total displacement required from initial mesh at 21GW to obtain deformed brain mesh at t_in_GW
-        u_old = u.vector()[:].copy()
+        nodal_displacement_field = []
+        for vertex, vectorDOFs in enumerate(vertex2dofs_V):
+            dofx, dofy, dofz = vectorDOFs[0], vectorDOFs[1], vectorDOFs[2]
+            uX =  u.vector()[dofx]
+            uY =  u.vector()[dofy]
+            uZ =  u.vector()[dofz]
+            cumul_u_vertex_array = np.array([uX, uY, uZ]) + u_vertex_old[vertex] # --> displacement field u from "t_in_GW - dt" to "t_in_GW" to be applied obtain the mesh configuration at t_in_GW
+            nodal_displacement_field.append(cumul_u_vertex_array.tolist()) # n_nodes x 3
+
+        cumulative_displacement[t_in_GW] = nodal_displacement_field # --> total displacement required from initial mesh at 21GW to obtain deformed brain mesh at t_in_GW
+
+        u_vertex_old = np.array(nodal_displacement_field).copy() # n_nodes x 3
 
         with open(cumulative_displacement_path, 'w') as cumulative_displacement_json_file:  
             json.dump(cumulative_displacement, cumulative_displacement_json_file)
