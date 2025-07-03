@@ -7,11 +7,12 @@ This model is integrated with an open-source simulation framework that facilitat
 
 A multi-scale approach to cortical folding modeling is also proposed, which use anatomical and diffusion MRI data to inform and refine model parameters.
 
-![simulation_framework](https://github.com/user-attachments/assets/2f3908ad-ff39-4348-ab21-e74448f4edbe)  
+![braingrowthFEniCS](https://github.com/user-attachments/assets/80db78da-2220-4ec2-9ea5-a94087019ca2)
 
 <div align="center">
  <img src="https://github.com/user-attachments/assets/c7df2b03-18c5-4f2f-87e7-c0ac29c166c8" width="400"/> <img src="https://github.com/user-attachments/assets/df45547a-71e0-49d7-b532-2216973c752e" width="400"/>
 </div>
+
 
 ## Biomechanical model
 #### Brain growth mechanics:
@@ -30,7 +31,7 @@ A multi-scale approach to cortical folding modeling is also proposed, which use 
   - FEM residual formulation:
     - conservation law: balance of the linear momentum (quasistatic ODE)
     - penalization of the self-collisions between the two hemispheres for brain simulations (contact mechanics)
-    - Lagrangian; total Piola-Kirchhoff I stress
+    - updated Lagrangian; total Piola-Kirchhoff I stress
       
   - boundary conditions:
     - Neumann: traction-free
