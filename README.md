@@ -10,7 +10,9 @@ A multi-scale approach to cortical folding modeling is also proposed, which use 
 ![braingrowthFEniCS](https://github.com/user-attachments/assets/80db78da-2220-4ec2-9ea5-a94087019ca2)
 
 ## An example of cortical folding simulation from real brain data
-![simulations_from_dHCP_surface_21GW](https://github.com/user-attachments/assets/71931411-2ad8-4354-9abb-fcd9b3361e5c)
+![Capture d’écran du 2025-07-07 14-56-13](https://github.com/user-attachments/assets/232a664f-8252-4a16-80df-2e37f8e266c6)
+
+![REFblue_vs_dHCPsurfacebeige_1](https://github.com/user-attachments/assets/c658e7d7-8863-4557-8b58-b55d8e0231b0)
 
 ## Biomechanical model
 #### Brain growth mechanics:
