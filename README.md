@@ -7,7 +7,7 @@ This model is integrated with an open-source simulation framework that facilitat
 
 A multi-scale approach to cortical folding modeling is also proposed, which use anatomical and diffusion MRI data to inform and refine model parameters.
 
-![braingrowthFEniCS](https://github.com/user-attachments/assets/80db78da-2220-4ec2-9ea5-a94087019ca2)
+<img width="4920" height="2520" alt="simulation_framework_GitHub" src="https://github.com/user-attachments/assets/4fcc7185-9cbd-4ee1-b0f0-40f551eedb73" />
 
 ## An example of cortical folding simulation from real brain data
 ![Capture d’écran du 2025-07-07 14-56-13](https://github.com/user-attachments/assets/232a664f-8252-4a16-80df-2e37f8e266c6)
