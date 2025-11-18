@@ -10,7 +10,7 @@ A multi-scale approach to cortical folding modeling is also proposed, which use 
 <img width="4920" height="2520" alt="simulation_framework_GitHub" src="https://github.com/user-attachments/assets/4fcc7185-9cbd-4ee1-b0f0-40f551eedb73" />
 
 ## An example of cortical folding simulation from real brain data
-![Capture d’écran du 2025-07-07 14-56-13](https://github.com/user-attachments/assets/232a664f-8252-4a16-80df-2e37f8e266c6)
+<img width="8192" height="3514" alt="results_FetalFoldSim_22_29GW" src="https://github.com/user-attachments/assets/391ba1e2-89c3-4355-81fe-f7a2ec4b33fc" />
 
 ![REFblue_vs_dHCPsurfacebeige_1](https://github.com/user-attachments/assets/c658e7d7-8863-4557-8b58-b55d8e0231b0)
 
