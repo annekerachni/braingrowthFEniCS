@@ -1,7 +1,7 @@
-# braingrowthFEniCS
+# FetalFoldSim
  
 ## Presentation
-**braingrowthFEniCS** is a biomechanical computational model of cortical folding for simulations on human whole-brain geometry, formulated within a finite element context and implemented in Python using the FEniCS code (version 2019.1.0) [Alnaes et al., 2015]. 
+**FetalFoldSim** is a biomechanical computational model of cortical folding for simulations on human whole-brain geometry, formulated within a finite element context and implemented in Python using the FEniCS code (version 2019.1.0) [Alnaes et al., 2015]. 
 
 This model is integrated with an open-source simulation framework that facilitates mesh generation and model parameterization directly from MRI data, incorporating cortical surface biometrics used for model calibration. The whole simulation pipeline relies on open source tools such as Gmsh, 3D Slicer, Meshlab, Netgen, FEniCS and slam (https://github.com/gauzias/slam) and uses `niftitomesh`, `metrics`, `utils`, `MRI_driven_parameters`.
 
